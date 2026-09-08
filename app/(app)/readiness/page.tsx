@@ -110,6 +110,8 @@ export default function ExecutionReadinessPage() {
                   </div>
                 </dl>
 
+                {!activeItem.issue && <p className="text-sm text-muted-foreground">Related Issue: None recorded</p>}
+                {!activeItem.impact && <p className="text-sm text-muted-foreground">Project Impact: Not recorded — responsible team to confirm</p>}
                 {activeItem.issue && (
                   <div className="rounded-lg border border-warning-foreground/20 bg-warning p-3">
                     <p className="mb-1 text-xs font-medium text-warning-foreground">Related Issue</p>

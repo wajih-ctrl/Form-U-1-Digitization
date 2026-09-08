@@ -109,7 +109,8 @@ export default function TechnicalWorkflowPage() {
                   <Detail label="Start Date" value={activeStage.startDate ? formatLong(activeStage.startDate) : "Not recorded"} />
                   <Detail label="Due Date" value={activeStage.dueDate ? formatLong(activeStage.dueDate) : activeStage.completedDate ? formatLong(activeStage.completedDate) : "Not scheduled"} />
                   {activeStage.completedDate && <Detail label="Completed" value={formatLong(activeStage.completedDate)} />}
-                  {activeStage.dependency && <Detail label="Dependency" value={activeStage.dependency} />}
+                  <Detail label="Dependency" value={activeStage.dependency || "None recorded"} />
+                  {!activeStage.impactIfDelayed && <Detail label="Impact if Delayed" value="Not recorded — specialist review required" />}
                 </dl>
 
                 {!activeStage.outcome && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Outcome placeholder: specialist findings have not yet been recorded.</p>}
@@ -143,7 +144,7 @@ export default function TechnicalWorkflowPage() {
                       toast.success("Stage status updated", { description: `${activeStage.name} marked ${v.replace("-", " ")}.` })
                     }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger aria-label="Technical stage status" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

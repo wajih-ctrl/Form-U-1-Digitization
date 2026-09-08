@@ -177,7 +177,7 @@ export default function IssuesPage() {
                       toast.success("Issue status updated", { description: `${activeIssue.title} marked ${v.replace(/-/g, " ")}.` })
                     }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger aria-label="Issue status" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

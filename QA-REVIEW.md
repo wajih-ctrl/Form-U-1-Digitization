@@ -34,7 +34,7 @@ The supplied requirements are preserved in REQUIREMENTS.md and mapped in REQUIRE
 
 ### Verified scope
 
-- Final regression: 22 browser tests passed, with zero failures, skips or flaky results (191 seconds).
+- Final regression: 23 browser tests passed, with zero failures, skips or flaky results.
 - Production build and TypeScript checks pass.
 - 26 routes at 1440, 1024, 768, 390 and 320 pixels: 130 checks, no detected body/main overflow or uncaught page errors.
 - Automated WCAG A/AA page checks at desktop: no detected violations. Representative readiness, issue, document and all four change-decision dialogs also receive accessibility checks.
@@ -48,3 +48,5 @@ This is mocked software as requested. Permissions demonstrate role behavior, not
 Automated checks do not certify every possible input or assistive-technology combination. Reproducible evidence is in qa-artifacts/audit.json and qa-artifacts/tests.json; README.md contains run and demo instructions.
 
 
+
+Latest requirements recheck: explicit milestone forecasts/dependencies, issue exposure dates/deep links, unquantified risk labels, empty required-field placeholders, named status controls, and Admin PM-only decision copy were corrected and verified. See REQUIREMENTS-RECHECK.md.

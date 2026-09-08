@@ -1,5 +1,27 @@
 import { test, expect, type Page } from '@playwright/test'
 
+test('required schedule fields remain explicit and exposure links open the correct issue', async ({ page }) => {
+  await page.goto('/timeline')
+  const milestones = page.locator('main ol > li')
+  await expect(milestones).toHaveCount(12)
+  for (const milestone of await milestones.all()) {
+    for (const label of ['Original:', 'Forecast:', 'Team:', 'Dependency:', 'Delay reason:', 'Downstream impact:']) {
+      await expect(milestone).toContainText(label)
+    }
+  }
+  await page.goto('/cost-impact')
+  const delivery = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Chemical Delivery Delay', exact: true }) })
+  await expect(delivery.getByRole('cell', { name: 'Sep 18, 2026', exact: true })).toHaveCount(2)
+  await expect(page.getByText('At Risk · not quantified', { exact: true }).first()).toBeVisible()
+  await delivery.getByRole('link').click()
+  await expect(page.getByRole('dialog')).toContainText('Chemical Delivery Delay')
+  await expect(page.getByRole('combobox', { name: 'Issue status', exact: true })).toBeVisible()
+  await page.goto('/technical')
+  await page.locator('main [data-slot="card-content"] > button').first().click()
+  for (const label of ['Responsible Team', 'Start Date', 'Due Date', 'Dependency']) await expect(page.getByRole('dialog')).toContainText(label)
+  await expect(page.getByRole('combobox', { name: 'Technical stage status' })).toBeVisible()
+})
+
 const roles = { 'project-manager':'Project Manager',technical:'Technical / Lab',operations:'Operations',procurement:'Procurement / Logistics',commercial:'Commercial',management:'Management',admin:'Admin' }
 async function role(page: Page,key: keyof typeof roles) {
   await page.goto('/')

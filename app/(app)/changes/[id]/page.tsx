@@ -177,7 +177,7 @@ export default function ChangeDetailPage() {
               ) : (
                 <>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    {!["project-manager", "admin"].includes(state.role) ? "Only the Project Manager can record this project-level decision." : allAssessmentsComplete ? "Review the completed assessments and combined impact before recording your decision." : "Complete the specialist assessments before approving this change."}
+                    {state.role !== "project-manager" ? "Only the Project Manager can record this project-level decision." : allAssessmentsComplete ? "Review the completed assessments and combined impact before recording your decision." : "Complete the specialist assessments before approving this change."}
                   </p>
                   <div className="flex flex-col gap-2">
                     <Button disabled={!decisionPending} onClick={() => setDialog("approve")}>

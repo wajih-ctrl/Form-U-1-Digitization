@@ -87,13 +87,13 @@ export default function TimelinePage() {
                     <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       <span>Team: {m.team}</span>
                       <span>Original: {formatLong(m.originalDate)}</span>
-                      {moved && <span className="font-medium text-warning-foreground">Forecast: {formatLong(m.forecastDate)}</span>}
+                      <span className={moved ? "font-medium text-warning-foreground" : ""}>Forecast: {formatLong(m.forecastDate)}</span>
                       {m.daysImpacted > 0 && <span className="font-medium text-warning-foreground">+{m.daysImpacted} Days</span>}
                     </div>
                     {!["ms-10", "ms-11", "ms-12"].includes(m.id) && canRecordExternal(role, m.team) && <Select value={m.status} onValueChange={v => { if(v) { updateMilestone(m.id, v as Milestone["status"]); toast.success(`${m.name} updated`) } }}><SelectTrigger aria-label={`Status for ${m.name}`} className="w-44"><SelectValue /></SelectTrigger><SelectContent>{["upcoming", "in-progress", "at-risk", "delayed", "completed"].map(v => <SelectItem key={v} value={v}>{milestoneMeta(v).label}</SelectItem>)}</SelectContent></Select>}
-                    {["ms-10", "ms-11", "ms-12"].includes(m.id) && <Link href="/completion" className="text-sm font-medium text-primary hover:underline">Review completion and client validation</Link>}{m.dependency && <p className="text-xs text-muted-foreground">Dependency: {m.dependency}</p>}
-                    {m.delayReason && <p className="text-sm text-warning-foreground">Delay reason: {m.delayReason}</p>}
-                    {m.downstreamImpact && <p className="text-sm text-muted-foreground">Downstream impact: {m.downstreamImpact}</p>}
+                    {["ms-10", "ms-11", "ms-12"].includes(m.id) && <Link href="/completion" className="text-sm font-medium text-primary hover:underline">Review completion and client validation</Link>}<p className="text-xs text-muted-foreground">Dependency: {m.dependency || "None recorded"}</p>
+                    <p className="text-sm text-muted-foreground">Delay reason: {m.delayReason || "No delay recorded"}</p>
+                    <p className="text-sm text-muted-foreground">Downstream impact: {m.downstreamImpact || "None recorded"}</p>
                   </div>
                 </li>
               )

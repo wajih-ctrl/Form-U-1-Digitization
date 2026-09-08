@@ -60,5 +60,7 @@ No Client/Supplier portal, chat, CRM, ERP, construction claims, accounting syste
 
 `pnpm build`, `pnpm typecheck`, `pnpm test:e2e`, and `pnpm qa:audit` are the repeatable checks. Browser results are in `qa-artifacts/tests.json` and `qa-artifacts/audit.json`. Tests include the seven-role matrix, the four-specialist change scenario, and the complete specialist → client → commercial → project closeout journey.
 
-Final results: 22/22 browser tests passed; 130 route/viewport checks completed with no detected overflow or runtime errors; automated page and tested-dialog accessibility scans passed. Production build and TypeScript checks passed.
+Final results: 23/23 browser tests passed; 130 route/viewport checks completed with no detected overflow or runtime errors; automated page and tested-dialog accessibility scans passed. Production build and TypeScript checks passed.
 
+
+The latest attachment was rechecked against source code. See REQUIREMENTS-RECHECK.md for screen-level evidence and the additional field-level corrections.

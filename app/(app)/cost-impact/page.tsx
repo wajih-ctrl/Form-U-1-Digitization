@@ -27,6 +27,7 @@ export default function CostTimelineImpactPage() {
       original: c.combinedImpact.originalCompletion,
       forecast: c.combinedImpact.forecastCompletion,
       days: c.combinedImpact.scheduleDays,
+      daysLabel: c.combinedImpact.scheduleDays > 0 ? `+${c.combinedImpact.scheduleDays} Days` : "None",
       cost: c.combinedImpact.cost,
       reason: c.reason,
       team: c.assessments.commercial.team,
@@ -38,12 +39,13 @@ export default function CostTimelineImpactPage() {
       .filter((i) => i.timelineImpact !== "None" && i.status !== "resolved")
       .map((i) => ({
         id: i.id,
-        href: "/issues",
+        href: `/issues?record=${i.id}`,
         label: i.title,
         source: "Issue",
-        original: "—",
-        forecast: "—",
+        original: milestones.find(m => m.name === i.affectedMilestone)?.originalDate ?? "—",
+        forecast: milestones.find(m => m.name === i.affectedMilestone)?.forecastDate ?? "—",
         days: Number(i.timelineImpact.match(/\d+/)?.[0]) || 0,
+        daysLabel: /\d/.test(i.timelineImpact) ? i.timelineImpact : `${i.timelineImpact} · not quantified`,
         cost: Number(i.costImpact.replace(/[^\d.]/g, "")) || 0,
         reason: i.description,
         team: i.team,
@@ -92,7 +94,7 @@ export default function CostTimelineImpactPage() {
                   <TableCell>{item.original !== "—" ? formatLong(item.original) : "—"}</TableCell><TableCell>{item.reason}</TableCell><TableCell>{item.affected || "None"}</TableCell><TableCell>{item.review}</TableCell>
                   <TableCell className="text-muted-foreground">{item.forecast !== "—" ? formatLong(item.forecast) : "—"}</TableCell>
                   <TableCell className={item.days > 0 ? "font-medium text-warning-foreground" : "text-muted-foreground"}>
-                    {item.days > 0 ? `+${item.days} Days` : "None"}
+                    {item.daysLabel}
                   </TableCell>
                   <TableCell className="font-medium text-foreground">{item.cost > 0 ? formatCurrency(item.cost) : "$0"}</TableCell>
                   <TableCell className="text-muted-foreground">{item.team}</TableCell>
