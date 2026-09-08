@@ -132,6 +132,7 @@ export interface AssessmentRecord {
 }
 
 export interface Change {
+  reviewStarted?: boolean
   id: string
   title: string
   source: "Client" | "Internal" | "Technical" | "Operations"

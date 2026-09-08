@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { canRecordExternal } from "@/lib/permissions"
 import { AddRecord } from "@/components/shared/add-record"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -18,7 +19,7 @@ import { stageMeta } from "@/lib/status-meta"
 import type { TechnicalStage } from "@/lib/types"
 
 export default function TechnicalWorkflowPage() {
-  const { technicalStages, updateTechnicalStageStatus } = useAppState()
+  const { role, technicalStages, updateTechnicalStageStatus } = useAppState()
   const [active, setActive] = React.useState<TechnicalStage | null>(null)
 
   const activeStage = active ? technicalStages.find((s) => s.id === active.id) ?? active : null
@@ -101,15 +102,17 @@ export default function TechnicalWorkflowPage() {
                 </div>
 
                 <PersonBlock personId={activeStage.assignedPersonId} />
+                <Button variant="outline" render={<Link href={activeStage.linkedDocumentId ? `/documents?record=${activeStage.linkedDocumentId}` : "/documents"} />}>{activeStage.linkedDocumentId ? "View Linked Record" : "Browse Technical Records"}</Button>
 
                 <dl className="grid grid-cols-2 gap-3 text-sm">
                   <Detail label="Responsible Team" value={activeStage.team} />
-                  {activeStage.startDate && <Detail label="Start Date" value={formatLong(activeStage.startDate)} />}
-                  {activeStage.dueDate && <Detail label="Due Date" value={formatLong(activeStage.dueDate)} />}
+                  <Detail label="Start Date" value={activeStage.startDate ? formatLong(activeStage.startDate) : "Not recorded"} />
+                  <Detail label="Due Date" value={activeStage.dueDate ? formatLong(activeStage.dueDate) : activeStage.completedDate ? formatLong(activeStage.completedDate) : "Not scheduled"} />
                   {activeStage.completedDate && <Detail label="Completed" value={formatLong(activeStage.completedDate)} />}
                   {activeStage.dependency && <Detail label="Dependency" value={activeStage.dependency} />}
                 </dl>
 
+                {!activeStage.outcome && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Outcome placeholder: specialist findings have not yet been recorded.</p>}
                 {activeStage.outcome && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3">
                     <p className="mb-1 text-xs font-medium text-muted-foreground">Outcome</p>
@@ -132,6 +135,7 @@ export default function TechnicalWorkflowPage() {
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium text-muted-foreground">Update Status</span>
                   <Select
+                    disabled={!canRecordExternal(role, activeStage.team)}
                     value={activeStage.status}
                     onValueChange={(v) => {
                       if (!v) return
@@ -153,7 +157,7 @@ export default function TechnicalWorkflowPage() {
                 </div>
               </div>
               <SheetFooter className="flex-row justify-end gap-2 border-t border-border">
-                <AddRecord stage={activeStage.name} />
+                {role === "technical" && <AddRecord stage={activeStage.name} />}
                 {activeStage.id === "stage-5" && (
                   <Button size="sm" render={<Link href="/changes/cr-003" />}>
                     View Related Change

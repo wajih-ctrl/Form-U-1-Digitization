@@ -12,10 +12,10 @@ const ADMIN_SECTIONS = [
   { label: "Projects", description: "Manage project records and metadata.", icon: Layers, href: "/projects" },
   { label: "Users", description: "Manage system users and access.", icon: Users, href: "/admin/users" },
   { label: "Roles", description: "Define role-to-workspace mapping.", icon: Users, href: "/admin/users" },
-  { label: "Project Phases", description: "Configure the technical workflow phases.", icon: ListChecks, href: "/technical" },
-  { label: "Status Reference", description: "Understand workflow statuses and their meaning.", icon: ClipboardList, href: "/admin/statuses" },
-  { label: "Issue Categories", description: "Manage issue categorization used in the register.", icon: TriangleAlert, href: "/issues" },
-  { label: "Change Categories", description: "Manage change request categorization.", icon: GitPullRequestArrow, href: "/changes" },
+  { label: "Project Phases", description: "Configure the technical workflow phases.", icon: ListChecks, href: "/admin/statuses" },
+  { label: "Statuses", description: "Manage display labels while preserving workflow states.", icon: ClipboardList, href: "/admin/statuses" },
+  { label: "Issue Categories", description: "Manage issue categorization used in the register.", icon: TriangleAlert, href: "/admin/statuses" },
+  { label: "Change Categories", description: "Manage change request categorization.", icon: GitPullRequestArrow, href: "/admin/statuses" },
   { label: "Technical Stages", description: "Configure the technical stage pipeline.", icon: ListChecks, href: "/technical" },
 ]
 

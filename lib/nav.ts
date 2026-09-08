@@ -48,8 +48,6 @@ const pmMain: NavItem[] = [
 
 const pmSecondary: NavItem[] = [
   { label: "Management Overview", href: "/management", icon: LineChart },
-  { label: "Admin", href: "/admin", icon: ShieldQuestion },
-  { label: "Settings", href: "/settings", icon: Settings },
 ]
 
 const managementMain: NavItem[] = [
@@ -57,7 +55,7 @@ const managementMain: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
 ]
 
-const managementSecondary: NavItem[] = [{ label: "Settings", href: "/settings", icon: Settings }]
+const managementSecondary: NavItem[] = []
 
 const adminMain: NavItem[] = [
   { label: "Admin Dashboard", href: "/admin", icon: Home },
@@ -65,11 +63,15 @@ const adminMain: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderKanban },
 ]
 
-const adminSecondary: NavItem[] = [{ label: "Settings", href: "/settings", icon: Settings }]
+const adminSecondary: NavItem[] = [{ label: "System Configuration", href: "/admin/statuses", icon: Settings }, { label: "System Activity", href: "/activity", icon: Activity }]
 
 export function getNavForRole(role: Role): { main: NavItem[]; secondary: NavItem[] } {
   if (role === "admin") return { main: adminMain, secondary: adminSecondary }
   if (role === "management") return { main: managementMain, secondary: managementSecondary }
+  if (role !== "project-manager") {
+    const allowed = role === "technical" ? ["/technical", "/projects", "/readiness", "/changes", "/issues", "/actions", "/documents", "/timeline", "/activity", "/completion"] : role === "commercial" ? ["/cost-impact", "/projects", "/changes", "/actions", "/issues", "/documents", "/timeline", "/activity", "/completion"] : ["/readiness", "/projects", "/timeline", "/issues", "/changes", "/actions", "/documents", "/activity", "/completion"]
+    return { main: allowed.map(href => pmMain.find(item => item.href === href)!), secondary: [] }
+  }
   return { main: pmMain, secondary: pmSecondary }
 }
 

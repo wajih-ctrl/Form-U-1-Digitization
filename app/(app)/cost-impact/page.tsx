@@ -30,7 +30,9 @@ export default function CostTimelineImpactPage() {
       cost: c.combinedImpact.cost,
       reason: c.reason,
       team: c.assessments.commercial.team,
-      pmStatus: c.pmDecision?.status ?? "awaiting-pm-decision",
+      pmStatus: c.status,
+      affected: c.affectedMilestoneIds.map(id => milestones.find(m => m.id === id)?.name ?? id).join(", "),
+      review: Object.values(c.assessments).every(a => a.status === "complete") ? "Review Complete" : "In Review",
     })),
     ...issues
       .filter((i) => i.timelineImpact !== "None" && i.status !== "resolved")
@@ -45,6 +47,8 @@ export default function CostTimelineImpactPage() {
         cost: Number(i.costImpact.replace(/[^\d.]/g, "")) || 0,
         reason: i.description,
         team: i.team,
+        affected: i.affectedMilestone,
+        review: i.status.replaceAll("-", " "),
         pmStatus: i.pmAttention ? "awaiting-pm-decision" : "impact-review-complete",
       })),
   ]
@@ -66,6 +70,7 @@ export default function CostTimelineImpactPage() {
             <TableRow className="bg-muted/40">
               <TableHead>Item</TableHead>
               <TableHead>Source</TableHead>
+              <TableHead>Original Date</TableHead><TableHead>Reason</TableHead><TableHead>Affected Milestone</TableHead><TableHead>Review Status</TableHead>
               <TableHead>Forecast Date</TableHead>
               <TableHead>Days Impacted</TableHead>
               <TableHead>Cost Exposure</TableHead>
@@ -84,6 +89,7 @@ export default function CostTimelineImpactPage() {
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{item.source}</TableCell>
+                  <TableCell>{item.original !== "—" ? formatLong(item.original) : "—"}</TableCell><TableCell>{item.reason}</TableCell><TableCell>{item.affected || "None"}</TableCell><TableCell>{item.review}</TableCell>
                   <TableCell className="text-muted-foreground">{item.forecast !== "—" ? formatLong(item.forecast) : "—"}</TableCell>
                   <TableCell className={item.days > 0 ? "font-medium text-warning-foreground" : "text-muted-foreground"}>
                     {item.days > 0 ? `+${item.days} Days` : "None"}

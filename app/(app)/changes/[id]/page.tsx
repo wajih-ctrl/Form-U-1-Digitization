@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { canDecide } from "@/lib/permissions"
 import { EditAssessment } from "@/components/shared/edit-assessment"
 import { notFound, useParams } from "next/navigation"
 import { toast } from "sonner"
@@ -33,7 +35,7 @@ export default function ChangeDetailPage() {
   const [clarifyTeam, setClarifyTeam] = React.useState("Technical")
   const [escalationLevel, setEscalationLevel] = React.useState("Management Review")
 
-  const decisionPending = ["awaiting-pm-decision", "impact-review-complete", "clarification-requested", "escalated"].includes(change.status) && ["project-manager", "admin"].includes(state.role) && Object.values(change.assessments).every(a => a.status === "complete")
+  const decisionPending = ["awaiting-pm-decision", "impact-review-complete", "clarification-requested", "escalated"].includes(change.status) && canDecide(state.role) && Object.values(change.assessments).every(a => a.status === "complete")
   const allAssessmentsComplete = Object.values(change.assessments).every((a) => a.status === "complete")
 
   const processSteps = [
@@ -56,13 +58,15 @@ export default function ChangeDetailPage() {
         title={`${change.id.toUpperCase()} · ${change.title}`}
         description={`Source: ${change.source} · Requested ${formatLong(change.dateRequested)}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => document.getElementById("combined-impact")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Review Impact</Button>
             {change.highImpact && <StatusChip label="High Impact" tone="danger" />}
             <StatusChip label={meta.label} tone={meta.tone} />
           </div>
         }
       />
 
+      {state.role === "project-manager" && change.id === "cr-003" && !change.reviewStarted && !["approved", "rejected"].includes(change.status) && <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-accent p-5"><div><h2 className="font-semibold">Client scope-change scenario</h2><p className="text-sm text-muted-foreground">Preview the completed impact below, or begin the specialist review to walk through each team’s work.</p></div><Button onClick={() => { state.startChangeReview(); toast.success("Specialist review opened", { description: "Switch to each specialist role to complete its assessment." }) }}>Begin Specialist Review</Button></div>}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Card>
@@ -122,7 +126,7 @@ export default function ChangeDetailPage() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card className="border-primary/30">
+          <Card id="combined-impact" className="scroll-mt-6 border-primary/30">
             <CardHeader>
               <CardTitle className="text-base">Combined Impact</CardTitle>
             </CardHeader>
@@ -173,7 +177,7 @@ export default function ChangeDetailPage() {
               ) : (
                 <>
                   <p className="text-sm leading-relaxed text-muted-foreground">
-                    {!["project-manager", "admin"].includes(state.role) ? "Only the Project Manager or Admin can record this decision." : allAssessmentsComplete ? "Review the completed assessments and combined impact before recording your decision." : "Complete the specialist assessments before approving this change."}
+                    {!["project-manager", "admin"].includes(state.role) ? "Only the Project Manager can record this project-level decision." : allAssessmentsComplete ? "Review the completed assessments and combined impact before recording your decision." : "Complete the specialist assessments before approving this change."}
                   </p>
                   <div className="flex flex-col gap-2">
                     <Button disabled={!decisionPending} onClick={() => setDialog("approve")}>
@@ -196,6 +200,10 @@ export default function ChangeDetailPage() {
         </div>
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card><CardHeader><CardTitle>Required Actions & Linked Documents</CardTitle></CardHeader><CardContent className="space-y-4">{state.actions.filter(a => a.linkedHref === `/changes/${change.id}`).map(a => <Link key={a.id} href={`/actions?search=${encodeURIComponent(a.title)}`} className="block rounded-lg border p-3 hover:bg-accent"><p className="text-sm font-medium">{a.title}</p><p className="text-xs text-muted-foreground">{a.team} · Due {formatLong(a.dueDate)} · {a.status}</p></Link>)}{!state.actions.some(a => a.linkedHref === `/changes/${change.id}`) && <p className="text-sm text-muted-foreground">No follow-up actions assigned yet.</p>}{state.documents.filter(d => d.relatedId === change.id).map(d => <Link key={d.id} href={`/documents?record=${d.id}`} className="block text-sm text-primary hover:underline">{d.name} · {d.addedBy}</Link>)}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Decision & Assessment History</CardTitle></CardHeader><CardContent className="space-y-4">{state.activity.filter(a => a.event.toLowerCase().includes(change.id) || a.relatedObject?.href === `/changes/${change.id}`).map(a => <div key={a.id} className="border-l-2 border-primary/20 pl-3"><p className="text-xs text-muted-foreground">{a.timestamp} · {a.person} · {a.team}</p><p className="text-sm">{a.event}</p></div>)}{change.pmDecision && <div className="text-sm"><p className="font-medium">{change.pmDecision.decidedBy} · {change.pmDecision.decidedAt}</p><p>{change.pmDecision.note}</p></div>}</CardContent></Card>
+      </div>
       <Dialog open={dialog === "approve"} onOpenChange={(o) => !o && closeAndReset()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
-test('every readiness, issue, technical, and document detail opens and closes', async ({page}) => {
+test('every readiness, issue, technical, and document detail opens and closes', async ({page}, testInfo) => {
   test.setTimeout(120000)
   for (const width of [1440,390]) {
     await page.setViewportSize({width,height:844})
@@ -20,7 +20,7 @@ test('every readiness, issue, technical, and document detail opens and closes', 
         expect(box!.x).toBeGreaterThanOrEqual(0)
         expect(box!.x+box!.width).toBeLessThanOrEqual(width+1)
         expect(box!.height).toBeLessThanOrEqual(845)
-        if(i===0){ const audit=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze();expect(audit.violations).toEqual([]);await page.screenshot({path:`qa-artifacts/dialog-${width}-${route}.png`}) }
+        if(i===0){ const audit=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze();expect(audit.violations).toEqual([]);await page.screenshot({path:testInfo.outputPath(`dialog-${width}-${route}.png`)}) }
         await page.keyboard.press('Escape')
         await expect(dialog).toHaveCount(0)
       }
@@ -31,7 +31,7 @@ test('every readiness, issue, technical, and document detail opens and closes', 
     for(let i=0;i<await stages.count();i++){await stages.nth(i).click();await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape')}
   }
 })
-test('all change dialogs fit on mobile and escape restores focus',async({page})=>{
+test('all change dialogs fit on mobile and escape restores focus',async({page}, testInfo)=>{
   await page.setViewportSize({width:390,height:740})
   await page.goto('/changes/cr-003')
   for(const name of ['Approve Change','Reject','Request Clarification','Escalate']){
@@ -39,11 +39,12 @@ test('all change dialogs fit on mobile and escape restores focus',async({page})=
     const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible()
     const box=await dialog.boundingBox();expect(box!.height).toBeLessThanOrEqual(709);expect(box!.x).toBeGreaterThanOrEqual(0)
     const audit=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa']).analyze();expect(audit.violations).toEqual([])
-    await page.screenshot({path:`qa-artifacts/decision-${name.replaceAll(' ','-')}.png`})
+    await page.screenshot({path:testInfo.outputPath(`decision-${name.replaceAll(' ','-')}.png`)})
     await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0)
   }
 })
-test('technical status choices save and assessment completion persists',async({page})=>{
+test('technical status choices save and assessment completion persists',async({page}, testInfo)=>{
+  await page.goto('/'); await page.getByRole('button',{name:/^Technical \/ Lab/}).click(); await page.getByRole('button',{name:'Enter Workspace'}).click()
   await page.goto('/technical')
   await page.locator('main [data-slot="card-content"] > button').first().click()
   for(const label of ['Not Started','In Progress','At Risk','Blocked','Completed']){
@@ -59,3 +60,4 @@ test('technical status choices save and assessment completion persists',async({p
   await page.reload()
   await expect(page.getByText('Validated revised sampling frequency with the lab.')).toBeVisible()
 })
+

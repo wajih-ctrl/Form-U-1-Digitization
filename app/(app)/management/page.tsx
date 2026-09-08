@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { projectHealthMeta, changeMeta } from "@/lib/status-meta"
 
 export default function ManagementOverviewPage() {
-  const { projects, changes, issues } = useAppState()
+  const { projects, changes, issues, readinessItems } = useAppState()
 
   const onTrack = projects.filter((p) => p.health === "on-track").length
   const atRisk = projects.filter((p) => p.health === "at-risk").length
@@ -59,6 +59,7 @@ export default function ManagementOverviewPage() {
         <MetricStat label="Schedule Exposure" value={`+${totalScheduleExposure} Days`} tone="warning" />
       </div>
 
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4"><MetricStat label="Major Changes" value={changes.filter(c => c.highImpact && !["approved", "rejected"].includes(c.status)).length} tone="warning" /><MetricStat label="Projects Waiting on Client" value={projects.filter(p => p.currentPhase === "Client Technical Review" || (p.id === "pwt-001" && readinessItems.some(r => r.team === "Client" && r.status !== "ready"))).length} /><MetricStat label="Projects Waiting on PM" value={changes.some(c => c.status === "awaiting-pm-decision") ? 1 : 0} /><MetricStat label="Escalated Issues" value={issues.filter(i => i.status === "escalated").length} tone="danger" /></div>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

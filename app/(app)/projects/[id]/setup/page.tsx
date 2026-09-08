@@ -18,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function ProjectSetupPage() {
   const params = useParams<{ id: string }>()
-  const { projects, updateProject } = useAppState()
+  const { role, configuration, projects, updateProject } = useAppState()
   const project = projects.find((p) => p.id === params.id)
   if (!project) return notFound()
 
@@ -38,6 +38,7 @@ export default function ProjectSetupPage() {
     commercialNotes: project.commercialNotes ?? "",
     clientContact: project.clientContact ?? "Robert Hayes, Client Technical Lead",
   })
+  const commercialOnly = role === "commercial"
   const [saved, setSaved] = React.useState(false)
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -89,19 +90,19 @@ export default function ProjectSetupPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="name">Project Name *</FieldLabel>
-                <Input id="name" required value={form.name} onChange={(e) => update("name", e.target.value)} />
+                <Input readOnly={commercialOnly} id="name" required value={form.name} onChange={(e) => update("name", e.target.value)} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="client">Client *</FieldLabel>
-                <Input id="client" required value={form.client} onChange={(e) => update("client", e.target.value)} />
+                <Input readOnly={commercialOnly} id="client" required value={form.client} onChange={(e) => update("client", e.target.value)} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="facility">Facility / Site *</FieldLabel>
-                <Input id="facility" required value={form.facility} onChange={(e) => update("facility", e.target.value)} />
+                <Input readOnly={commercialOnly} id="facility" required value={form.facility} onChange={(e) => update("facility", e.target.value)} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="type">Project Type</FieldLabel>
-                <Input id="type" value={form.projectType} onChange={(e) => update("projectType", e.target.value)} />
+                <Input readOnly={commercialOnly} id="type" value={form.projectType} onChange={(e) => update("projectType", e.target.value)} />
               </Field>
             </div>
             <Field>
@@ -110,7 +111,7 @@ export default function ProjectSetupPage() {
             </Field>
             <Field>
               <FieldLabel>Project Status</FieldLabel>
-              <Select value={form.status} onValueChange={(v) => { if (v !== null) update("status", v) }}>
+              <Select disabled={commercialOnly} value={form.status} onValueChange={(v) => { if (v !== null) update("status", v) }}>
                 <SelectTrigger className="w-full sm:w-64">
                   <SelectValue />
                 </SelectTrigger>
@@ -156,15 +157,15 @@ export default function ProjectSetupPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field>
               <FieldLabel htmlFor="start">Project Start Date</FieldLabel>
-              <Input id="start" type="date" value={form.startDate} onChange={(e) => update("startDate", e.target.value)} />
+              <Input readOnly={commercialOnly} id="start" type="date" value={form.startDate} onChange={(e) => update("startDate", e.target.value)} />
             </Field>
             <Field>
               <FieldLabel htmlFor="promised">Promised Completion</FieldLabel>
-              <Input id="promised" type="date" value={form.promisedCompletion} onChange={(e) => update("promisedCompletion", e.target.value)} />
+              <Input readOnly={commercialOnly} id="promised" type="date" value={form.promisedCompletion} onChange={(e) => update("promisedCompletion", e.target.value)} />
             </Field>
             <Field>
               <FieldLabel htmlFor="forecast">Forecast Completion</FieldLabel>
-              <Input id="forecast" type="date" value={form.forecastCompletion} onChange={(e) => update("forecastCompletion", e.target.value)} />
+              <Input readOnly={commercialOnly} id="forecast" type="date" value={form.forecastCompletion} onChange={(e) => update("forecastCompletion", e.target.value)} />
             </Field>
             <Field>
               <FieldLabel>Current Phase</FieldLabel>
@@ -173,13 +174,7 @@ export default function ProjectSetupPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[
-                    "Execution Readiness",
-                    "Client Technical Review",
-                    "Field Execution",
-                    "Technical Completion",
-                    "Project Closure",
-                  ].map((phase) => (
+                  {Array.from(new Set([form.currentPhase, ...configuration.phases])).map((phase) => (
                     <SelectItem key={phase} value={phase}>
                       {phase}
                     </SelectItem>
@@ -217,7 +212,7 @@ export default function ProjectSetupPage() {
         <CardContent className="pt-0">
           <Field className="max-w-sm">
             <FieldLabel htmlFor="contact">Client Contact</FieldLabel>
-            <Input id="contact" value={form.clientContact} onChange={(e) => update("clientContact", e.target.value)} />
+            <Input readOnly={commercialOnly} id="contact" value={form.clientContact} onChange={(e) => update("clientContact", e.target.value)} />
             <FieldDescription>Primary technical point of contact for {form.client}.</FieldDescription>
           </Field>
         </CardContent>

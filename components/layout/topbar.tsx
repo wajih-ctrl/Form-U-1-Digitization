@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { GlobalSearch } from "@/components/shared/global-search"
 import { useRouter, usePathname } from "next/navigation"
-import { Bell, LogOut, Menu, Search, UserCog } from "lucide-react"
+import { Activity, LogOut, Menu, Search, UserCog } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,7 +48,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
               {projects.map((p) => (
-                <DropdownMenuItem key={p.id} onClick={() => router.push(p.id === PRIMARY_PROJECT_ID ? "/command-center" : `/projects/${p.id}`)}>
+                <DropdownMenuItem key={p.id} onClick={() => router.push(p.id === PRIMARY_PROJECT_ID && role === "project-manager" ? "/command-center" : `/projects/${p.id}`)}>
                   <span className="truncate">{p.name}</span>
                 </DropdownMenuItem>
               ))}
@@ -60,7 +60,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
       <div className="ml-auto min-w-0"><GlobalSearch /></div>
 
       <Button variant="ghost" size="icon" aria-label="Activity" onClick={() => router.push("/activity")} className="relative">
-        <Bell />
+        <Activity />
         {unread > 0 && (
           <span className="absolute top-1 right-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-foreground">
             {unread}
@@ -94,7 +94,7 @@ export function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <UserCog data-icon="inline-start" />
-              Account Settings
+              Role Responsibilities
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/")}>
               <LogOut data-icon="inline-start" />

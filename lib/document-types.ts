@@ -1,0 +1,1 @@
+export const DOCUMENT_TYPES = ["Client Technical Requirement", "Sample Analysis", "Lab Test Result", "Technical Evaluation", "Technical Proposal", "Client Approval", "Pilot Test Result", "Field Report", "Change Supporting Document", "Technical Completion Report", "Client Validation"]

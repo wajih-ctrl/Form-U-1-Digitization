@@ -66,6 +66,7 @@ export default function ChangesPage() {
                     <Link href={`/changes/${c.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
                       {c.id.toUpperCase()} · {c.title}
                     </Link>
+                    <details className="mt-2 text-xs"><summary className="cursor-pointer font-medium text-primary">Specialist impact summary</summary><p className="mt-2 text-muted-foreground">{c.requestedChange}</p><dl className="mt-3 space-y-2">{Object.entries(c.assessments).map(([key,assessment]) => <div key={key}><dt className="font-medium">{assessment.team} · {assessment.status.replaceAll("-", " ")}</dt><dd className="text-muted-foreground">{assessment.assessment}</dd></div>)}</dl></details>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{c.source}</TableCell>
                   <TableCell className="text-muted-foreground">{formatLong(c.dateRequested)}</TableCell>

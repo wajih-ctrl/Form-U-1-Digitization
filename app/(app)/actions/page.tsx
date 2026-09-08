@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { canRecordExternal, ROLE_PERSON } from "@/lib/permissions"
 import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -17,6 +18,7 @@ import { actionMeta, priorityMeta } from "@/lib/status-meta"
 
 const FILTERS = [
   "All",
+  "My Decisions",
   "Overdue",
   "Waiting on Client",
   "Waiting on Technical",
@@ -27,7 +29,7 @@ const FILTERS = [
 ] as const
 
 export default function ActionsPage() {
-  const { actions, updateActionStatus } = useAppState()
+  const { role, changes, actions, updateActionStatus } = useAppState()
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]>("All")
 
   const [search, setSearch] = React.useState("")
@@ -35,6 +37,7 @@ export default function ActionsPage() {
   React.useEffect(() => { setSearch(searchParams.get("search") ?? "") }, [searchParams])
   const filtered = actions.filter((a) => {
     if (!`${a.title} ${a.waitingOn}`.toLowerCase().includes(search.trim().toLowerCase())) return false
+    if (filter === "My Decisions") return a.coordinatorId === ROLE_PERSON[role] && a.linkedHref?.startsWith("/changes/") && changes.some(c => a.linkedHref === `/changes/${c.id}` && c.status === "awaiting-pm-decision")
     if (filter === "All") return true
     if (filter === "Overdue") return a.status === "overdue"
     if (filter === "High Impact") return a.priority === "high"
@@ -72,6 +75,7 @@ export default function ActionsPage() {
             <TableRow className="bg-muted/40">
               <TableHead>Action</TableHead>
               <TableHead>Linked Item</TableHead>
+              <TableHead>Responsible Team</TableHead><TableHead>Coordinator</TableHead><TableHead>Impact if Late</TableHead>
               <TableHead>Assigned</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Priority</TableHead>
@@ -96,6 +100,7 @@ export default function ActionsPage() {
                       <span className="text-muted-foreground">{action.linkedItem}</span>
                     )}
                   </TableCell>
+                  <TableCell>{action.team}</TableCell><TableCell><PersonChip personId={action.coordinatorId} /></TableCell><TableCell>{action.impactIfLate}</TableCell>
                   <TableCell>
                     <PersonChip personId={action.assignedPersonId} />
                   </TableCell>
@@ -112,6 +117,7 @@ export default function ActionsPage() {
                       <span className="text-xs text-muted-foreground">{action.nextStep}</span>
                       {action.status !== "complete" && (
                         <Button
+                          disabled={!canRecordExternal(role, action.team)}
                           variant="outline"
                           size="sm"
                           onClick={() => {
@@ -129,7 +135,7 @@ export default function ActionsPage() {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-sm text-muted-foreground">
                   No actions match this filter.
                 </TableCell>
               </TableRow>

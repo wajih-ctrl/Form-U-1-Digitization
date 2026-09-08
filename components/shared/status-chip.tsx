@@ -1,3 +1,6 @@
+"use client"
+
+import { useAppState } from "@/lib/store"
 import { cn } from "cn"
 import { toneClasses, type Tone } from "@/lib/status-meta"
 
@@ -10,6 +13,8 @@ export function StatusChip({
   tone: Tone
   className?: string
 }) {
+  const { configuration } = useAppState()
+  const displayLabel = configuration.statusLabels[label] ?? label
   return (
     <span
       className={cn(
@@ -28,7 +33,7 @@ export function StatusChip({
           tone === "neutral" && "bg-neutral-status-foreground"
         )}
       />
-      {label}
+      {displayLabel}
     </span>
   )
 }

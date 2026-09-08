@@ -1,6 +1,11 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { canRecordExternal } from "@/lib/permissions"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import type { Milestone } from "@/lib/types"
 import { cn } from "cn"
 import { useAppState, formatLong } from "@/lib/store"
 import { PageHeader } from "@/components/shared/page-header"
@@ -12,7 +17,7 @@ import { milestoneMeta } from "@/lib/status-meta"
 const FILTERS = ["All", "Delayed", "At Risk", "Completed", "Upcoming"] as const
 
 export default function TimelinePage() {
-  const { milestones, projects } = useAppState()
+  const { milestones, projects, role, updateMilestone } = useAppState()
   const project = projects.find((p) => p.id === "pwt-001")!
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]>("All")
 
@@ -85,7 +90,8 @@ export default function TimelinePage() {
                       {moved && <span className="font-medium text-warning-foreground">Forecast: {formatLong(m.forecastDate)}</span>}
                       {m.daysImpacted > 0 && <span className="font-medium text-warning-foreground">+{m.daysImpacted} Days</span>}
                     </div>
-                    {m.dependency && <p className="text-xs text-muted-foreground">Dependency: {m.dependency}</p>}
+                    {!["ms-10", "ms-11", "ms-12"].includes(m.id) && canRecordExternal(role, m.team) && <Select value={m.status} onValueChange={v => { if(v) { updateMilestone(m.id, v as Milestone["status"]); toast.success(`${m.name} updated`) } }}><SelectTrigger aria-label={`Status for ${m.name}`} className="w-44"><SelectValue /></SelectTrigger><SelectContent>{["upcoming", "in-progress", "at-risk", "delayed", "completed"].map(v => <SelectItem key={v} value={v}>{milestoneMeta(v).label}</SelectItem>)}</SelectContent></Select>}
+                    {["ms-10", "ms-11", "ms-12"].includes(m.id) && <Link href="/completion" className="text-sm font-medium text-primary hover:underline">Review completion and client validation</Link>}{m.dependency && <p className="text-xs text-muted-foreground">Dependency: {m.dependency}</p>}
                     {m.delayReason && <p className="text-sm text-warning-foreground">Delay reason: {m.delayReason}</p>}
                     {m.downstreamImpact && <p className="text-sm text-muted-foreground">Downstream impact: {m.downstreamImpact}</p>}
                   </div>
@@ -101,3 +107,4 @@ export default function TimelinePage() {
     </div>
   )
 }
+

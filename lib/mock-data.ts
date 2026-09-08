@@ -753,6 +753,11 @@ export const ACTIONS: ActionItem[] = [
 
 // ---------- Documents ----------
 export const DOCUMENTS: DocumentRecord[] = [
+  { id: "doc-client-approval", name: "Client technical approval record", type: "Client Approval", addedBy: "James Parker", date: "2026-09-12", stage: "Client Technical Review", status: "pending-review", summary: "External client technical approval is pending the revised proposal. Mock reference only." },
+  { id: "doc-pilot", name: "Pilot and field validation record", type: "Pilot Test Result", addedBy: "Carlos Diaz", date: "2026-09-12", stage: "Pilot / Field Validation", status: "draft", summary: "Placeholder for specialist-recorded pilot and field validation outcomes. No technical result is inferred." },
+  { id: "doc-field", name: "Field execution report", type: "Field Report", addedBy: "John Miller", date: "2026-09-12", stage: "Field Execution", status: "draft", summary: "Field report placeholder for manpower, equipment, execution progress, and operational exceptions." },
+  { id: "doc-completion", name: "Technical completion report", type: "Technical Completion Report", addedBy: "Dr. Omar Rahman", date: "2026-09-12", stage: "Technical Completion", status: "draft", summary: "Technical completion report is pending specialist closeout and field verification." },
+  { id: "doc-validation", name: "Client validation and sign-off record", type: "Client Validation", addedBy: "James Parker", date: "2026-09-12", stage: "Client Validation", status: "draft", summary: "External dependency. Client sign-off has not yet been received." },
   {
     id: "doc-1",
     name: "Client Technical Requirement — Produced Water Treatment",

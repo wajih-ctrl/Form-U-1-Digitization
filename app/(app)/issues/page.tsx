@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { canCoordinate, canRecordExternal } from "@/lib/permissions"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -20,7 +21,7 @@ import { issueMeta, severityMeta } from "@/lib/status-meta"
 import type { Issue } from "@/lib/types"
 
 export default function IssuesPage() {
-  const { issues, updateIssueStatus } = useAppState()
+  const { role, issues, updateIssueStatus } = useAppState()
   const [search, setSearch] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState("all")
   const [active, setActive] = React.useState<Issue | null>(null)
@@ -148,6 +149,7 @@ export default function IssuesPage() {
                 <PersonBlock personId={activeIssue.assignedPersonId} />
                 <p className="text-sm leading-relaxed text-foreground">{activeIssue.description}</p>
                 <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <Detail label="Responsible Team" value={activeIssue.team} /><Detail label="Timeline Impact" value={activeIssue.timelineImpact} /><Detail label="PM Attention Required" value={activeIssue.pmAttention ? "Yes" : "No"} />
                   <Detail label="Severity" value={severityMeta(activeIssue.severity).label} />
                   <Detail label="Raised By" value={activeIssue.raisedBy} />
                   <Detail label="Date Raised" value={formatLong(activeIssue.dateRaised)} />
@@ -167,6 +169,7 @@ export default function IssuesPage() {
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium text-muted-foreground">Update Status</span>
                   <Select
+                    disabled={!canCoordinate(role, activeIssue.team)}
                     value={activeIssue.status}
                     onValueChange={(v) => {
                       if (!v) return
@@ -183,7 +186,7 @@ export default function IssuesPage() {
                       <SelectItem value="waiting-for-input">Waiting for Input</SelectItem>
                       <SelectItem value="at-risk">At Risk</SelectItem>
                       <SelectItem value="overdue">Overdue</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="resolved" disabled={!canRecordExternal(role, activeIssue.team)}>Resolved</SelectItem>
                       <SelectItem value="escalated">Escalated</SelectItem>
                     </SelectContent>
                   </Select>
@@ -198,14 +201,14 @@ export default function IssuesPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={["resolved", "escalated"].includes(activeIssue.status)}
+                  disabled={!canCoordinate(role, activeIssue.team) || ["resolved", "escalated"].includes(activeIssue.status)}
                   onClick={() => { updateIssueStatus(activeIssue.id, "escalated"); toast.success("Issue escalated", { description: `${activeIssue.title} is now visible to management.` }) }}
                 >
                   Escalate
                 </Button>
                 <Button
                   size="sm"
-                  disabled={activeIssue.status === "resolved"}
+                  disabled={!canRecordExternal(role, activeIssue.team) || activeIssue.status === "resolved"}
                   onClick={() => {
                     updateIssueStatus(activeIssue.id, "resolved")
                     toast.success("Issue resolved", { description: `${activeIssue.title} marked resolved.` })

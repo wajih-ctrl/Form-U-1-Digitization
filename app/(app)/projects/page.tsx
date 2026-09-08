@@ -1,6 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { canManageProjects } from "@/lib/permissions"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import { useAppState, formatShort, formatCurrency } from "@/lib/store"
@@ -15,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { projectHealthMeta } from "@/lib/status-meta"
 
 export default function ProjectsPage() {
-  const { projects, changes, issues, actions } = useAppState()
+  const router = useRouter()
+  const { role, createProject, projects, changes, issues, actions } = useAppState()
   const [search, setSearch] = React.useState("")
   const [health, setHealth] = React.useState("all")
   const [phase, setPhase] = React.useState("all")
@@ -31,7 +35,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Projects" description="Track active technical and operational projects." />
+      <PageHeader actions={canManageProjects(role) && <Button onClick={() => { const id = createProject(); if(id) router.push(`/projects/${id}/setup`) }}>Create Project</Button>} title="Projects" description="Track active technical and operational projects." />
 
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -72,6 +76,7 @@ export default function ProjectsPage() {
           <TableHeader>
             <TableRow className="bg-muted/40">
               <TableHead>Project</TableHead>
+              <TableHead>Project Type</TableHead><TableHead>Promised Completion</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Project Manager</TableHead>
               <TableHead>Current Phase</TableHead>
@@ -105,6 +110,7 @@ export default function ProjectsPage() {
                     </Link>
                     <div className="truncate text-xs text-muted-foreground">{p.facility}</div>
                   </TableCell>
+                  <TableCell>{p.projectType}</TableCell><TableCell>{formatShort(p.promisedCompletion)}</TableCell>
                   <TableCell className="text-muted-foreground">{p.client}</TableCell>
                   <TableCell>
                     <PersonChip personId={p.projectManagerId} />
@@ -125,7 +131,7 @@ export default function ProjectsPage() {
                   <TableCell>
                     <StatusChip label={meta.label} tone={meta.tone} />
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">{openItems}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{isPrimary ? `${changes.filter(c => !["approved", "rejected"].includes(c.status)).length} changes · ${issues.filter(i => i.status !== "resolved").length} issues · ${actions.filter(a => a.status === "overdue").length} overdue actions` : "No items logged"}</TableCell>
                   <TableCell className="text-right font-medium text-foreground">
                     {p.costExposure > 0 ? formatCurrency(p.costExposure) : "—"}
                   </TableCell>
@@ -134,7 +140,7 @@ export default function ProjectsPage() {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={12} className="py-10 text-center text-sm text-muted-foreground">
                   No projects match the current filters.
                 </TableCell>
               </TableRow>

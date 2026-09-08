@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
+import { RoleBoundary } from "./role-boundary"
 import { Sidebar } from "./sidebar"
 import { Topbar } from "./topbar"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMobileNav={() => setMobileOpen(true)} />
         <main ref={mainRef} id="main-content" tabIndex={0} className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 lg:p-8"><React.Suspense fallback={<p role="status" className="p-6 text-muted-foreground">Loading workspace…</p>}>{children}</React.Suspense></div>
+          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 lg:p-8"><React.Suspense fallback={<p role="status" className="p-6 text-muted-foreground">Loading workspace…</p>}><RoleBoundary>{children}</RoleBoundary></React.Suspense></div>
         </main>
       </div>
     </div>

@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { canRecordExternal } from "@/lib/permissions"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useAppState, formatLong } from "@/lib/store"
@@ -16,7 +18,7 @@ import { readinessMeta } from "@/lib/status-meta"
 import type { ReadinessItem } from "@/lib/types"
 
 export default function ExecutionReadinessPage() {
-  const { readinessItems, updateReadinessStatus } = useAppState()
+  const { role, readinessItems, updateReadinessStatus } = useAppState()
   const [active, setActive] = React.useState<ReadinessItem | null>(null)
 
   const readyCount = readinessItems.filter((r) => r.status === "ready").length
@@ -134,6 +136,7 @@ export default function ExecutionReadinessPage() {
                 )}
               </div>
 
+              <div className="space-y-2"><p className="text-xs text-muted-foreground">Status · Owned by {activeItem.team}</p><Select value={activeItem.status} onValueChange={v => { if (v) { updateReadinessStatus(activeItem.id, v as ReadinessItem["status"]); toast.success("Readiness status updated") } }}><SelectTrigger aria-label="Readiness status" className="w-full" disabled={!canRecordExternal(role, activeItem.team)}><SelectValue /></SelectTrigger><SelectContent>{["ready", "in-progress", "at-risk", "blocked", "not-started"].map(v => <SelectItem key={v} value={v}>{readinessMeta(v).label}</SelectItem>)}</SelectContent></Select></div>
               <DialogFooter className="justify-between sm:justify-between">
                 <div className="flex gap-2">
                   {activeItem.relatedChangeId && (
@@ -149,7 +152,7 @@ export default function ExecutionReadinessPage() {
                 </div>
                 <Button
                   size="sm"
-                  disabled={activeItem.status === "ready"}
+                  disabled={!canRecordExternal(role, activeItem.team) || activeItem.status === "ready"}
                   onClick={() => {
                     updateReadinessStatus(activeItem.id, "ready")
                     toast.success("Readiness updated", { description: `${activeItem.name} marked Ready.` })

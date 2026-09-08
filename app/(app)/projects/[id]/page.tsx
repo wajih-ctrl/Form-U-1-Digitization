@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { canManageProjects } from "@/lib/permissions"
 import Link from "next/link"
 import { notFound, useParams } from "next/navigation"
 import { ArrowRight, Pencil } from "lucide-react"
@@ -35,7 +36,7 @@ export default function ProjectDetailPage() {
         title={project.name}
         description={project.scopeSummary}
         actions={
-          <Button variant="outline" size="sm" render={<Link href={`/projects/${project.id}/setup`} />}>
+          (canManageProjects(state.role) || state.role === "commercial") && <Button variant="outline" size="sm" render={<Link href={`/projects/${project.id}/setup`} />}>
             <Pencil data-icon="inline-start" />
             Edit Project
           </Button>
