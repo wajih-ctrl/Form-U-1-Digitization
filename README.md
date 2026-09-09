@@ -24,6 +24,8 @@ This app requires a persistent Node server with a writable working directory; it
 
 PDF upload explicitly registers the installed PDF.js worker, and the upload route's deployment trace includes the worker and WASM codecs. If an older deployment reports `Setting up fake worker failed` with a missing `pdf.worker.mjs`, rebuild and redeploy this version. After building and starting the production server, run `pnpm test:upload-deployment` to verify the deployment manifest and actual three-page PDF rendering. Set `QA_BASE_URL` to test another server.
 
+The tracing configuration resolves the physical PDF.js package directory before including its assets. With pnpm, tracing both `node_modules/pdfjs-dist` (a directory symlink) and file entries below it can make Vercel reject an otherwise successful build with `patch_build_4xx` / "invalid deployment package". The deployment test checks for this conflict. This fix requires a new deployment of the updated configuration.
+
 This worker fix does not turn local record storage into serverless persistence. A `/var/task` deployment still needs a persistent storage implementation or a persistent Node host; storing records only in temporary function storage would lose them between instances.
 
 ## Workflow
