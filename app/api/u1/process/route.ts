@@ -19,7 +19,11 @@ export async function POST(request: Request) {
       start(controller) {
         let disconnected=false,errors=''
         const send=(data:string)=>{if(!disconnected)try{controller.enqueue(encoder.encode(data))}catch{disconnected=true}}
-        const child=spawn(process.execPath,[path.join(process.cwd(),'scripts/u1-process.mjs'),id],{cwd:process.cwd(),windowsHide:true,stdio:['ignore','pipe','pipe']})
+        const oidcToken=request.headers.get('x-vercel-oidc-token')
+        const child=spawn(process.execPath,[path.join(process.cwd(),'scripts/u1-process.mjs'),id],{
+          cwd:process.cwd(),windowsHide:true,stdio:['ignore','pipe','pipe'],
+          env:{...process.env,...(oidcToken?{VERCEL_OIDC_TOKEN:oidcToken}:{})},
+        })
         const timer=setTimeout(()=>{errors='OCR timed out. Try clearer images.';child.kill()},240000)
         child.stdout.on('data',chunk=>send(chunk.toString()))
         child.stderr.on('data',chunk=>{errors+=chunk.toString()})

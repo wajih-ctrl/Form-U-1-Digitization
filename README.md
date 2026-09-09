@@ -28,7 +28,7 @@ The tracing configuration resolves the physical PDF.js package directory before 
 
 ### Vercel setup
 
-1. In this project's **Storage** tab, create/connect a **private Blob** store. Vercel adds `BLOB_READ_WRITE_TOKEN`; enable it for the deployment environments you use. Never put this token in a `NEXT_PUBLIC_` variable.
+1. In this project's **Storage** tab, create/connect a **private Blob** store. Current connections add `BLOB_STORE_ID` and use Vercel's rotating OIDC credential; older connections may add `BLOB_READ_WRITE_TOKEN`. Keep **System Environment Variables** enabled. Never put a storage credential in a `NEXT_PUBLIC_` variable.
 2. Deploy the updated code after connecting the store. Existing deployments do not receive newly added environment variables automatically.
 3. Upload the supplied reference, process it, reload the page and confirm that the original pages and record remain available. Complete review before approval.
 
@@ -37,6 +37,8 @@ The production app refuses to fall back to `/var/task` or `/tmp` when storage is
 Uploads are capped at 4 MB per file/request to fit Vercel's request limit, with images sent one at a time. Camera images use JPEG for transport; stored page images remain PNG. Compress larger PDFs before upload. For isolated preview data, set a separate `U1_STORAGE_PREFIX` (letters, digits, underscores or hyphens); the default is `u1`.
 
 Run `pnpm test:storage` for local and mocked remote storage tests, including independent function instances and stale-write prevention. Run `pnpm test:upload-deployment` against a running production build to check its assets and actual PDF rendering. Live Vercel/Blob verification still requires a connected store and deployment.
+
+For OIDC-connected stores, Vercel supplies the short-lived credential in each Function request. The app forwards that credential only to the local OCR child process for the duration of processing, allowing the child to read pages and save the extracted record in the same private store. It is never returned to the browser or logged.
 
 ## Workflow
 

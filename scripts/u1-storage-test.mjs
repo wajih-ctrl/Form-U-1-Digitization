@@ -50,6 +50,14 @@ test('unconfigured Vercel fails clearly instead of writing into its deployment o
   await assert.rejects(store.putPage('one',Buffer.from('pixels')),/Connect a private Vercel Blob store/);
   await assert.rejects(store.listRecords(),/Production storage is not configured/);
 });
+test('current Vercel OIDC Blob connection is recognized without a long-lived token',async()=>{
+  const client=remoteClient(),env={VERCEL:'1',BLOB_STORE_ID:'store_example',VERCEL_OIDC_TOKEN:'short-lived-test-token'};
+  const store=createStorage({env,client,root:'/var/task/not-writable'});
+  await store.putPage('oidc-page',Buffer.from('oidc pixels'));
+  assert.equal((await store.getPage('oidc-page')).toString(),'oidc pixels');
+  await store.saveRecord(record('U1-OIDC'));
+  assert.equal((await store.getRecord('U1-OIDC')).id,'U1-OIDC');
+});
 test('local storage stays persistent across fresh instances',async()=>{
   const root=await mkdtemp(path.join(tmpdir(),'u1-storage-test-'));
   try{
