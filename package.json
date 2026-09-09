@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test tests/u1.spec.ts tests/u1-design.spec.ts",
     "test:extraction": "node scripts/u1-extraction-test.mjs",
+    "test:upload-deployment": "node scripts/u1-upload-deployment-test.mjs",
     "qa:audit": "playwright test tests/u1.spec.ts -g \"mobile|camera\""
   },
   "dependencies": {

@@ -22,6 +22,10 @@ pnpm start
 
 This app requires a persistent Node server with a writable working directory; it is not a static export or an ephemeral serverless deployment. Keep `node_modules`, `scripts/u1-process.mjs`, and `lib/u1` available alongside the build. The PDF.js WASM codecs and English OCR language data are installed dependencies. No API key or cloud OCR service is required.
 
+PDF upload explicitly registers the installed PDF.js worker, and the upload route's deployment trace includes the worker and WASM codecs. If an older deployment reports `Setting up fake worker failed` with a missing `pdf.worker.mjs`, rebuild and redeploy this version. After building and starting the production server, run `pnpm test:upload-deployment` to verify the deployment manifest and actual three-page PDF rendering. Set `QA_BASE_URL` to test another server.
+
+This worker fix does not turn local record storage into serverless persistence. A `/var/task` deployment still needs a persistent storage implementation or a persistent Node host; storing records only in temporary function storage would lose them between instances.
+
 ## Workflow
 
 1. Capture/upload all three pages: vessel/design, nozzles/supports, certification.
