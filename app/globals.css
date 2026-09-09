@@ -46,8 +46,8 @@
   --color-info-foreground: var(--info-foreground);
   --color-neutral-status: var(--neutral-status);
   --color-neutral-status-foreground: var(--neutral-status-foreground);
-  --font-sans: var(--font-outfit), 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, monospace;
+  --font-sans: var(--font-jost), 'Jost', sans-serif;
+  --font-mono: var(--font-jost), 'Jost', sans-serif;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

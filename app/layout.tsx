@@ -1,17 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Outfit, Geist_Mono } from 'next/font/google'
+import { Jost } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { AppStateProvider } from '@/lib/store'
 import './globals.css'
 
-const geistSans = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' })
+const jost = Jost({ subsets: ['latin'], variable: '--font-jost', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'Command | Project Execution & Operational Visibility',
+  title: 'Vessel | Form U-1 Engineering Records',
   description:
-    'Coordinate technical, operational, commercial and project execution from one project-level view.',
+    'Capture, extract, review and approve Form U-1 manufacturer data reports.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -44,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`light bg-background ${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`light bg-background ${jost.variable}`}>
       <body className="antialiased font-sans">
         <AppStateProvider>
           <TooltipProvider delay={200}>

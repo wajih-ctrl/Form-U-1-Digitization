@@ -17,3 +17,5 @@ test-results/
 playwright-report/
 qa-artifacts/*.png
 *.tsbuildinfo
+.u1-data/
+tmp/
