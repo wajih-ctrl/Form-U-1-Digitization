@@ -37,11 +37,16 @@ export function Capture({pages,setPages,onProcess,onCancel,notify}:{pages:UPage[
     if(!files.length)return
     setBusy(true)
     try {
-      const form=new FormData();files.forEach(f=>form.append('files',f))
-      const response=await fetch('/api/u1/upload',{method:'POST',body:form}),data=await response.json()
-      if(!response.ok)throw new Error(data.error)
-      if(pages.length+data.pages.length>3)throw new Error('Only three pages are needed. Remove a page before adding another.')
-      setPages([...pages,...data.pages]);notify(`${data.pages.length} page(s) added. Check crop and page order before processing.`)
+      if(files.some(f=>f.size>4*1024*1024))throw new Error('Each file must be 4 MB or smaller. Compress the PDF or use smaller page images.')
+      const added:UPage[]=[]
+      for(const file of files){
+        const form=new FormData();form.append('files',file)
+        const response=await fetch('/api/u1/upload',{method:'POST',body:form}),data=await response.json()
+        if(!response.ok)throw new Error(data.error)
+        added.push(...data.pages)
+        if(pages.length+added.length>3)throw new Error('Only three pages are needed. Remove a page before adding another.')
+      }
+      setPages([...pages,...added]);notify(`${added.length} page(s) added. Check crop and page order before processing.`)
     }catch(e){notify(e instanceof Error?e.message:'Upload failed')}finally{setBusy(false)}
   }
   function snap() {
@@ -62,8 +67,9 @@ export function Capture({pages,setPages,onProcess,onCancel,notify}:{pages:UPage[
       c.width=Math.round(source.width*(bounds.right-bounds.left)/100);c.height=Math.round(source.height*(bounds.bottom-bounds.top)/100)
       if(c.width<200||c.height<200)throw new Error('The crop is too small. Include the full document page.')
       c.getContext('2d')!.drawImage(source,sx,sy,c.width,c.height,0,0,c.width,c.height)
-      const blob=await new Promise<Blob|null>(resolve=>c.toBlob(resolve,'image/png'));if(!blob)throw new Error('Could not capture image.')
-      const form=new FormData();form.append('files',blob,editing!.name+'.png')
+      const blob=await new Promise<Blob|null>(resolve=>c.toBlob(resolve,'image/jpeg',.92));if(!blob)throw new Error('Could not capture image.')
+      if(blob.size>4*1024*1024)throw new Error('This photo exceeds 4 MB. Retake at a lower camera resolution or upload a smaller image.')
+      const form=new FormData();form.append('files',blob,editing!.name+'.jpg')
       const response=await fetch('/api/u1/upload',{method:'POST',body:form}),data=await response.json();if(!response.ok)throw new Error(data.error)
       const next=[...pages];if(editing!.index!==undefined)next[editing!.index]=data.pages[0];else next.push(data.pages[0]);setPages(next);setEditing(null);notify('Page saved. Check that every form edge is visible.')
     }catch(e){notify(e instanceof Error?e.message:'Could not save photo')}finally{setBusy(false)}
@@ -75,7 +81,7 @@ export function Capture({pages,setPages,onProcess,onCancel,notify}:{pages:UPage[
     <div className="u-intake-steps"><span className="active">01 <b>Capture pages</b></span><i/><span>02 <b>Extract & review</b></span><i/><span>03 <b>Approve record</b></span></div>
     <div className="u-capture-grid">
       <div className="u-card u-capture-primary"><div className="u-icon-block"><Camera size={27}/></div><div className="u-eyebrow">RECOMMENDED FOR PHYSICAL FORMS</div><h2>From paper to a vessel record.</h2><p>Photograph each page in good light. Keep the form flat and include all four edges.</p><button className="u-btn primary large" disabled={busy||pages.length===3} onClick={()=>takePhotos()}><Camera size={18}/>Take Photos <ArrowRight size={17}/></button><small>Camera capture · edge detection · crop & rotate</small></div>
-      <div className={`u-card u-upload ${dragging?'dragging':''}`} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);void upload([...e.dataTransfer.files])}}><Upload size={29}/><h3>Already have a digital copy?</h3><p>Drop your three-page PDF or page images here.</p><button className="u-btn" disabled={busy||pages.length===3} onClick={()=>input.current?.click()}>{busy?<Loader2 className="u-spin" size={16}/>:<Upload size={16}/>}Upload PDF / Images</button><small>PDF, JPG, PNG, WebP · up to 25 MB per file</small><button className="u-text-btn" disabled={busy||pages.length>0} onClick={reference}><FileText size={14}/>Try the supplied reference form</button></div>
+      <div className={`u-card u-upload ${dragging?'dragging':''}`} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);void upload([...e.dataTransfer.files])}}><Upload size={29}/><h3>Already have a digital copy?</h3><p>Drop your three-page PDF or page images here.</p><button className="u-btn" disabled={busy||pages.length===3} onClick={()=>input.current?.click()}>{busy?<Loader2 className="u-spin" size={16}/>:<Upload size={16}/>}Upload PDF / Images</button><small>PDF, JPG, PNG, WebP · up to 4 MB per file</small><button className="u-text-btn" disabled={busy||pages.length>0} onClick={reference}><FileText size={14}/>Try the supplied reference form</button></div>
     </div>
     <input ref={input} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple hidden onChange={e=>{void upload([...e.target.files??[]]);e.target.value=''}}/>
     <input ref={native} type="file" accept="image/*" capture="environment" hidden onChange={e=>{const file=e.target.files?.[0];if(file){const reader=new FileReader();reader.onload=()=>{setBounds(full);setEditing({src:String(reader.result),index:replacement.current,name:`Camera page ${(replacement.current??pages.length)+1}`})};reader.readAsDataURL(file)}e.target.value=''}}/>

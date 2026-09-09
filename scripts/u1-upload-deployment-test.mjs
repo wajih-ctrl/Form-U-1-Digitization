@@ -16,6 +16,14 @@ for(const suffix of ['/pdfjs-dist/legacy/build/pdf.worker.mjs','/pdfjs-dist/wasm
   assert.ok(asset,`Upload deployment is missing ${suffix}`);
   assert.ok((await stat(path.resolve(path.dirname(manifest),asset))).size>0);
 }
+const processManifest=path.resolve('.next/server/app/api/u1/process/route.js.nft.json');
+const processFiles=JSON.parse(await readFile(processManifest,'utf8')).files;
+for(const suffix of ['/scripts/u1-process.mjs','/lib/u1/storage.mjs','/4.0.0/eng.traineddata.gz','/tesseract.js/src/worker-script/node/index.js']){
+  assert.ok(processFiles.some(file=>file.replaceAll('\\','/').endsWith(suffix)),`OCR deployment is missing ${suffix}`);
+}
+assert.ok(processFiles.some(file=>file.includes('canvas')&&file.endsWith('.node')),'OCR native canvas binding is missing');
+assert.ok(processFiles.some(file=>file.replaceAll('\\','/').includes('/@vercel/blob/')),'OCR child process Blob SDK is missing');
+for(const file of [...files,...processFiles])assert.ok(!/[\\/]\.u1-data[\\/]|[\\/]tmp[\\/]/.test(file),'Local user/test data must not be packaged');
 const base=process.env.QA_BASE_URL||'http://localhost:3001';
 const body=new FormData();
 body.append('files',new Blob([await readFile('public/reference-u1.pdf')],{type:'application/pdf'}),'Reference Form U-1.pdf');

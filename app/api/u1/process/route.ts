@@ -1,6 +1,9 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
-import { getRecord, saveRecord } from '@/lib/u1/engine.mjs'
+// The child script loads this module outside Next's module graph. Import it
+// here as well so deployment tracing includes its native/OCR dependencies.
+import '@/lib/u1/engine.mjs'
+import { getRecord, saveRecord } from '@/lib/u1/storage.mjs'
 export const runtime = 'nodejs'
 export const maxDuration = 300
 const running=new Set<string>()
@@ -24,7 +27,8 @@ export async function POST(request: Request) {
         child.on('close',async code=>{
           clearTimeout(timer);running.delete(id)
           if(code!==0) {
-            const current=await getRecord(id);current.status='Captured';await saveRecord(current)
+            try {const current=await getRecord(id);current.status='Captured';await saveRecord(current)}
+            catch {errors+=' Unable to save the failed processing state.'}
             send(JSON.stringify({stage:'error',message:errors||'Processing failed. Check page order and image clarity, then retry.'})+'\n')
           }
           if(!disconnected)try{controller.close()}catch{}

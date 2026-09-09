@@ -10,6 +10,10 @@ The reference PDF was compared against `C:\Users\Rida\Downloads\Sample U_Form (1
 
 ### Latest audit fixes
 
+- Vercel storage correction: uploaded pages and records now use a configured private Blob store, rather than the read-only deployment directory. Missing production storage is reported explicitly; there is no temporary-disk fallback. Local development retains disk storage.
+- Production dependency traces include the OCR child script, Blob SDK, native modules and English language assets. Uploads are sent individually with a 4 MB cap. Live Vercel/Blob sign-off is pending a connected private store and redeployment; mocked remote tests are not live service verification.
+- Storage-change validation passed: production build, all six browser scenarios on the production build (including actual reference OCR and camera capture), four storage tests, PDF/OCR deployment-asset checks, and a Vercel-mode missing-storage HTTP check. The last check returned the intended configuration message rather than attempting a deployment-directory write.
+
 - Approved dashboard totals now open a matching list that includes records already marked Database Ready.
 - Admin field mappings now show the actual geometry template even before processing, or while a Captured record is selected.
 - Previous/next navigation respects the Needs review filter, preventing selection of invisible resolved fields.

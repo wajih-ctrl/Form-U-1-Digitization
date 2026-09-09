@@ -1,7 +1,6 @@
-import { readFile } from 'node:fs/promises'
-import { pagePath } from '@/lib/u1/engine.mjs'
+import { getPage } from '@/lib/u1/storage.mjs'
 export const runtime = 'nodejs'
 export async function GET(_: Request, context: {params:Promise<{id:string}>}) {
-  try { const {id}=await context.params; return new Response(await readFile(pagePath(id)),{headers:{'Content-Type':'image/png','Cache-Control':'private, max-age=3600'}}) }
+  try { const {id}=await context.params; return new Response(await getPage(id),{headers:{'Content-Type':'image/png','Cache-Control':'private, max-age=3600'}}) }
   catch {return new Response('Page not found',{status:404})}
 }

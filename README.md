@@ -20,13 +20,23 @@ pnpm build
 pnpm start
 ```
 
-This app requires a persistent Node server with a writable working directory; it is not a static export or an ephemeral serverless deployment. Keep `node_modules`, `scripts/u1-process.mjs`, and `lib/u1` available alongside the build. The PDF.js WASM codecs and English OCR language data are installed dependencies. No API key or cloud OCR service is required.
+Local development stores files in `.u1-data`. On Vercel, the app uses a private Blob store for both page images and records. It is not a static export. The PDF.js WASM codecs, OCR child script, native libraries and English language data are explicitly included in the production trace. OCR does not require a cloud OCR API key.
 
 PDF upload explicitly registers the installed PDF.js worker, and the upload route's deployment trace includes the worker and WASM codecs. If an older deployment reports `Setting up fake worker failed` with a missing `pdf.worker.mjs`, rebuild and redeploy this version. After building and starting the production server, run `pnpm test:upload-deployment` to verify the deployment manifest and actual three-page PDF rendering. Set `QA_BASE_URL` to test another server.
 
 The tracing configuration resolves the physical PDF.js package directory before including its assets. With pnpm, tracing both `node_modules/pdfjs-dist` (a directory symlink) and file entries below it can make Vercel reject an otherwise successful build with `patch_build_4xx` / "invalid deployment package". The deployment test checks for this conflict. This fix requires a new deployment of the updated configuration.
 
-This worker fix does not turn local record storage into serverless persistence. A `/var/task` deployment still needs a persistent storage implementation or a persistent Node host; storing records only in temporary function storage would lose them between instances.
+### Vercel setup
+
+1. In this project's **Storage** tab, create/connect a **private Blob** store. Vercel adds `BLOB_READ_WRITE_TOKEN`; enable it for the deployment environments you use. Never put this token in a `NEXT_PUBLIC_` variable.
+2. Deploy the updated code after connecting the store. Existing deployments do not receive newly added environment variables automatically.
+3. Upload the supplied reference, process it, reload the page and confirm that the original pages and record remain available. Complete review before approval.
+
+The production app refuses to fall back to `/var/task` or `/tmp` when storage is missing. Records are read without the Blob CDN cache; conditional writes prevent a concurrent stale review from overwriting a newer revision. This is prototype record persistence, separate from the simulated **Send to Database** integration. Authentication is still prototype functionality; private object storage does not implement user authentication for the app.
+
+Uploads are capped at 4 MB per file/request to fit Vercel's request limit, with images sent one at a time. Camera images use JPEG for transport; stored page images remain PNG. Compress larger PDFs before upload. For isolated preview data, set a separate `U1_STORAGE_PREFIX` (letters, digits, underscores or hyphens); the default is `u1`.
+
+Run `pnpm test:storage` for local and mocked remote storage tests, including independent function instances and stale-write prevention. Run `pnpm test:upload-deployment` against a running production build to check its assets and actual PDF rendering. Live Vercel/Blob verification still requires a connected store and deployment.
 
 ## Workflow
 

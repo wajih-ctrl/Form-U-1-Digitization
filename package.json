@@ -10,6 +10,7 @@
     "test:e2e": "playwright test tests/u1.spec.ts tests/u1-design.spec.ts",
     "test:extraction": "node scripts/u1-extraction-test.mjs",
     "test:upload-deployment": "node scripts/u1-upload-deployment-test.mjs",
+    "test:storage": "node --test scripts/u1-storage-test.mjs",
     "qa:audit": "playwright test tests/u1.spec.ts -g \"mobile|camera\""
   },
   "dependencies": {
@@ -17,6 +18,7 @@
     "@napi-rs/canvas": "^1.0.8",
     "@tesseract.js-data/eng": "^1.0.0",
     "@vercel/analytics": "1.6.1",
+    "@vercel/blob": "^2.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cn": "^0.2.6",
