@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare:ocr": "node scripts/prepare-ocr-runtime.mjs",
+    "predev": "pnpm prepare:ocr",
     "dev": "next dev",
+    "prebuild": "pnpm prepare:ocr",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

@@ -22,8 +22,12 @@ for(const suffix of ['/pdfjs-dist/legacy/build/pdf.worker.mjs','/pdfjs-dist/wasm
 const processManifest=path.resolve('.next/server/app/api/u1/process/route.js.nft.json');
 const processFiles=JSON.parse(await readFile(processManifest,'utf8')).files;
 await assertDeployable(processManifest,processFiles);
-for(const suffix of ['/lib/u1/ocr/eng.traineddata.gz','/tesseract.js/src/worker-script/node/index.js']){
+for(const suffix of ['/lib/u1/ocr/eng.traineddata.gz','/lib/u1/ocr/runtime/node_modules/tesseract.js/src/worker-script/node/index.js']){
   assert.ok(processFiles.some(file=>file.replaceAll('\\','/').endsWith(suffix)),`OCR deployment is missing ${suffix}`);
+}
+for(const dependency of ['bmp-js','tesseract.js-core','wasm-feature-detect']){
+  const normalized=processFiles.map(file=>file.replaceAll('\\','/'));
+  assert.ok(normalized.some(file=>file.endsWith(`/lib/u1/ocr/runtime/node_modules/${dependency}/package.json`)),`OCR worker dependency is missing: ${dependency}`);
 }
 assert.ok(processFiles.some(file=>file.includes('canvas')&&file.endsWith('.node')),'OCR native canvas binding is missing');
 assert.ok(processFiles.some(file=>file.includes('sharp')&&file.endsWith('.node')),'OCR native sharp binding is missing');

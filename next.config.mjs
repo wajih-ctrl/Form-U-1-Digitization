@@ -1,15 +1,9 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 
 // Trace the physical pnpm package, never files underneath its directory symlink.
 // Vercel rejects packages containing both a symlink and file entries below it.
 const pdfPackage = path.relative(process.cwd(), realpathSync('node_modules/pdfjs-dist')).replaceAll('\\', '/')
-const require = createRequire(import.meta.url)
-const physicalPackage = name => path.relative(process.cwd(), path.dirname(require.resolve(`${name}/package.json`))).replaceAll('\\', '/')
-const ocrPackage = physicalPackage('tesseract.js')
-const ocrRequire = createRequire(require.resolve('tesseract.js/package.json'))
-const corePackage = path.relative(process.cwd(), path.dirname(ocrRequire.resolve('tesseract.js-core/package.json'))).replaceAll('\\', '/')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -21,10 +15,8 @@ const nextConfig = {
       `${pdfPackage}/wasm/**/*`,
     ],
     '/api/u1/process': [
-      `${ocrPackage}/src/**/*`,
       './lib/u1/ocr/eng.traineddata.gz',
-      `${corePackage}/*.wasm`,
-      `${corePackage}/*.js`,
+      './lib/u1/ocr/runtime/**/*',
     ],
   },
   outputFileTracingExcludes: {
