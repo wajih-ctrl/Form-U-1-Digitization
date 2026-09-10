@@ -17,7 +17,10 @@ function remoteClient(){
     },
     async get(key,options){
       assert.equal(options.access,'private');assert.equal(options.useCache,false);
-      const object=objects.get(key);return object?{statusCode:200,stream:new Response(object.bytes).body,blob:{etag:object.etag}}:null;
+      const object=objects.get(key);return object?{statusCode:200,stream:new Response(object.bytes).body,blob:{etag:`download-${object.etag}`}}:null;
+    },
+    async head(key){
+      const object=objects.get(key);if(!object)throw new Error('Not found');return {etag:object.etag};
     },
     async list({prefix,cursor}){
       const keys=[...objects.keys()].filter(k=>k.startsWith(prefix)).sort();const i=Number(cursor||0);
