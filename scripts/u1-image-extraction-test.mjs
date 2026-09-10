@@ -29,7 +29,10 @@ for(let i=0;i<3;i++){
   const [registered]=await prepareFile(jpeg,`Camera / screenshot page ${i+1}`),metadata=await sharp(await readFile(pagePath(registered.id))).metadata()
   assert.deepEqual([metadata.width,metadata.height],[1844,2374]);captured.push(registered)
 }
-const result=await extract(captured,event=>console.log(event.message))
+// Browsers and mobile photo pickers do not guarantee selection order.
+const shuffled=[captured[1],captured[2],captured[0]]
+const result=await extract(shuffled,event=>console.log(event.message))
+assert.deepEqual(result.pages.map(page=>page.name),captured.map(page=>page.name),'Image pages should be classified and restored to Form U-1 order.')
 await writeFile('tmp/u1-tests/image-result.json',JSON.stringify(result,null,2))
 const normalize=value=>value.replace(/\s/g,'').toUpperCase(),expected={...changes,manufacturer:'ATLAS VESSELS LTD',manufacturerAddress:'18 DOCK ROAD'},failures=[]
 for(const [id,value] of Object.entries(expected)){

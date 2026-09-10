@@ -8,7 +8,7 @@ const runExtraction=extract as unknown as (
   pages:unknown[],
   progress:(event:Record<string,unknown>)=>void,
   signal:AbortSignal,
-)=>Promise<{fields:unknown[]}>
+)=>Promise<{fields:unknown[],pages:unknown[]}>
 
 export async function POST(request: Request) {
   const {id}=await request.json()
@@ -30,8 +30,8 @@ export async function POST(request: Request) {
           try {
             // Keep OCR inside the packaged Next.js Function. A standalone
             // child cannot resolve Vercel's hashed external package aliases.
-            const {fields}=await runExtraction(record.pages,event=>send(event),abort.signal)
-            record.fields=fields;record.status='Review Required';record.updated=new Date().toISOString()
+            const {fields,pages}=await runExtraction(record.pages,event=>send(event),abort.signal)
+            record.pages=pages as typeof record.pages;record.fields=fields;record.status='Review Required';record.updated=new Date().toISOString()
             record.history.push({id:crypto.randomUUID(),field:'Document',before:'Captured',after:'Review Required',reviewer:'Local OCR',at:record.updated,status:'Extracted'})
             await saveRecord(record)
             send({stage:'complete',message:'Ready for engineering review',record})
