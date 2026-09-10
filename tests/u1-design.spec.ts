@@ -33,7 +33,8 @@ test('requirement audit: static mappings, approved totals and filtered review na
   await expect(page.getByRole('textbox',{name:'Edit Manufacturer',exact:true})).toBeVisible()
 })
 
-test('Jost, focus review, grouped records and safe navigation from captured forms',async({page,request})=>{
+test('Jost, complete document hit map, focus review and safe record navigation',async({page,request})=>{
+  test.setTimeout(120000)
   const upload=await request.post('/api/u1/upload',{multipart:{files:{name:'reference.pdf',mimeType:'application/pdf',buffer:await readFile('public/reference-u1.pdf')}}})
   const {pages}=await upload.json()
   // Browser-only fixtures test layout/navigation without creating a signed record.
@@ -46,14 +47,45 @@ test('Jost, focus review, grouped records and safe navigation from captured form
   await expect(page.getByRole('heading',{name:'Capture a new form'})).toBeVisible()
   await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:/Engineering review/}).click()
   await expect(page.getByRole('heading',{name:'Review against the original'})).toBeVisible()
-  const sheet=page.locator('.u-document-sheet'),sheetBox=await sheet.boundingBox(),course=source.fields.find(f=>f.id==='shell.1.course')!,bolting=source.fields.find(f=>f.id==='bodyFlange.1.bolting')!
-  expect(sheetBox).toBeTruthy()
-  await page.mouse.click(sheetBox!.x+course.box[0]*sheetBox!.width-10,sheetBox!.y+(course.box[1]+course.box[3]/2)*sheetBox!.height)
-  await expect(page.locator('[data-field-id="shell.1.course"]')).toHaveClass(/active/)
-  await page.mouse.click(sheetBox!.x+(bolting.box[0]+bolting.box[2]/2)*sheetBox!.width,sheetBox!.y+(bolting.box[1]+bolting.box[3]/2)*sheetBox!.height)
+  const sheet=page.locator('.u-document-sheet'),viewport=page.locator('.u-document-viewport')
+  let currentZoom=100
+  for(const targetZoom of [75,100,200]){
+    while(currentZoom<targetZoom){await page.getByRole('button',{name:'Zoom in',exact:true}).click();currentZoom+=25}
+    while(currentZoom>targetZoom){await page.getByRole('button',{name:'Zoom out',exact:true}).click();currentZoom-=25}
+    for(const pageNumber of [1,2,3]){
+      await page.getByRole('button',{name:`Page ${pageNumber}`,exact:true}).click()
+      const grouped=new Map<string,typeof source.fields>()
+      for(const field of source.fields.filter(f=>f.page===pageNumber)){const key=field.box.join(',');grouped.set(key,[...(grouped.get(key)||[]),field])}
+      const cases=[...grouped.values()].map(group=>({box:group[0].box,ids:group.map(f=>f.id)}))
+      const misses=await sheet.evaluate(async(element,tests)=>{
+        const failed:string[]=[]
+        for(const test of tests){
+          const rect=element.getBoundingClientRect(),[x,y,w,h]=test.box
+          element.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+(x+w/2)*rect.width,clientY:rect.top+(y+h/2)*rect.height}))
+          await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
+          const selected=document.querySelector<HTMLElement>('[data-field-id].selected, [data-field-id].active')?.dataset.fieldId
+          if(!selected||!test.ids.includes(selected))failed.push(`${test.ids.join('|')} selected ${selected||'nothing'}`)
+        }
+        return failed
+      },cases)
+      expect(misses,`Page ${pageNumber} source-map misses at ${targetZoom}%`).toEqual([])
+      }
+  }
+  await page.getByRole('button',{name:'Page 1',exact:true}).click()
+  async function clickPrintedLabel(fieldId:string){
+    const field=source.fields.find(f=>f.id===fieldId)!
+    await page.waitForTimeout(350)
+    await viewport.evaluate((element,y)=>{element.scrollTop=Math.max(0,y*element.scrollHeight-element.clientHeight/2);element.scrollLeft=0},field.box[1]+field.box[3]/2)
+    await page.waitForTimeout(50)
+    const box=await sheet.boundingBox();expect(box).toBeTruthy()
+    await page.mouse.click(box!.x+.055*box!.width,box!.y+(field.box[1]+field.box[3]/2)*box!.height)
+  }
+  for(const id of ['design.mawp','design.impact']){await clickPrintedLabel(id);await expect(page.locator(`[data-field-id="${id}"]`)).toHaveClass(/selected/)}
+  await clickPrintedLabel('design.test')
   await expect(page.locator('.u-source-options')).toContainText('3 fields share this source')
-  await page.getByRole('button',{name:'Select Bolting size',exact:true}).click()
-  await expect(page.locator('[data-field-id="bodyFlange.1.boltSize"]')).toHaveClass(/active/)
+  await page.getByRole('button',{name:'Select Hydro / pneumatic / combined',exact:true}).click()
+  await expect(page.locator('[data-field-id="design.testType"]')).toHaveClass(/selected/)
+  for(const id of ['tubesheet.1.material','tube.1.material']){await clickPrintedLabel(id);await expect(page.locator(`[data-field-id="${id}"]`)).toHaveClass(/active/)}
   await page.getByLabel('Review section').selectOption('General information')
   await page.getByRole('button',{name:'Focus review',exact:true}).click()
   await expect(page.locator('.u-app')).toHaveClass(/u-focus-mode/)

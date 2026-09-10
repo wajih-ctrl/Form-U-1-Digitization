@@ -29,8 +29,13 @@ export function Review({record,onPatch,busy,onApproval}:{record:URecord;onPatch:
     }
     const centerDistance=(f:UField)=>Math.hypot((x-f.box[0]-f.box[2]/2)*rect.width,(y-f.box[1]-f.box[3]/2)*rect.height)
     const ranked=onPage.map(field=>({field,distance:distance(field)})).sort((a,b)=>a.distance-b.distance||centerDistance(a.field)-centerDistance(b.field)||a.field.box[2]*a.field.box[3]-b.field.box[2]*b.field.box[3])
-    if(!ranked[0]||ranked[0].distance>18)return
-    const field=ranked[0].field,sameBox=(f:UField)=>f.box.every((value,i)=>Math.abs(value-field.box[i])<.000001)
+    const rowRanked=onPage.map(field=>{
+      const [bx,by,bw,bh]=field.box,vertical=Math.max(by-y,0,y-by-bh),horizontal=Math.max(bx-x,0,x-bx-bw)
+      return {field,vertical,horizontal}
+    }).filter(hit=>hit.vertical<=.018&&hit.horizontal<=.22).sort((a,b)=>a.vertical-b.vertical||a.horizontal-b.horizontal||centerDistance(a.field)-centerDistance(b.field))
+    const field=ranked[0]?.distance<=18?ranked[0].field:rowRanked[0]?.field
+    if(!field)return
+    const sameBox=(f:UField)=>f.box.every((value,i)=>Math.abs(value-field.box[i])<.000001)
     return {field,related:onPage.filter(sameBox)}
   }
   const navigable=record.fields.filter(f=>filter!=='Needs review'||!resolved(f))
