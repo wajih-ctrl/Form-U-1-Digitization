@@ -8,24 +8,21 @@ const pdfPackage = path.relative(process.cwd(), realpathSync('node_modules/pdfjs
 const require = createRequire(import.meta.url)
 const physicalPackage = name => path.relative(process.cwd(), path.dirname(require.resolve(`${name}/package.json`))).replaceAll('\\', '/')
 const ocrPackage = physicalPackage('tesseract.js')
-const languagePackage = physicalPackage('@tesseract.js-data/eng')
 const ocrRequire = createRequire(require.resolve('tesseract.js/package.json'))
 const corePackage = path.relative(process.cwd(), path.dirname(ocrRequire.resolve('tesseract.js-core/package.json'))).replaceAll('\\', '/')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   devIndicators: false,
-  serverExternalPackages: ['@vercel/blob', 'tesseract.js', '@tesseract.js-data/eng', 'pdfjs-dist', '@napi-rs/canvas', 'sharp'],
+  serverExternalPackages: ['@vercel/blob', 'tesseract.js', 'pdfjs-dist', '@napi-rs/canvas', 'sharp'],
   outputFileTracingIncludes: {
     '/api/u1/upload': [
       `${pdfPackage}/legacy/build/pdf.worker.mjs`,
       `${pdfPackage}/wasm/**/*`,
     ],
     '/api/u1/process': [
-      './scripts/u1-process.mjs',
-      './lib/u1/*.mjs',
       `${ocrPackage}/src/**/*`,
-      `${languagePackage}/4.0.0/eng.traineddata.gz`,
+      './lib/u1/ocr/eng.traineddata.gz',
       `${corePackage}/*.wasm`,
       `${corePackage}/*.js`,
     ],
