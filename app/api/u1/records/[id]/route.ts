@@ -32,10 +32,15 @@ export async function PATCH(request: Request, context:{params:Promise<{id:string
       }
       record.status='In Review'
     } else if(body.action==='approve') {
-      if(!record.fields.length||record.fields.some(f=>!resolved(f))) throw new Error('Resolve every unconfirmed, flagged and missing field before approval.')
+      if(!record.fields.length) throw new Error('This record has no extracted fields to approve.')
       if(['Approved','Database Ready'].includes(record.status)) throw new Error('This record is already approved.')
+      const pending=record.fields.filter(f=>!resolved(f)).length
+      for(const field of record.fields) {
+        if(!field.value.trim()){field.value='N/A';field.status='N/A'}
+        else if(!['Corrected','N/A'].includes(field.status))field.status='Verified'
+      }
       record.status='Approved';record.approvedAt=now
-      record.history.push({id:crypto.randomUUID(),field:'Record',before:'In Review',after:'Approved · Ready for Database Entry',reviewer,at:now,status:'Approved'})
+      record.history.push({id:crypto.randomUUID(),field:'Record',before:`${pending} fields awaiting final confirmation`,after:'Review confirmed · Approved · Ready for Database Entry',reviewer,at:now,status:'Approved'})
     } else if(body.action==='database') {
       if(!['Approved','Database Ready'].includes(record.status)) throw new Error('Approve the record before sending it to the database.')
       record.status='Database Ready';record.databaseReceipt=`SIM-${crypto.randomUUID().slice(0,8)}`

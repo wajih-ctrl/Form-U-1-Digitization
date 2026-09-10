@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 
-test('real PDF extraction, engineering corrections, approval gate and exports',async({page,request})=>{
+test('real PDF extraction, engineering corrections, one-step confirmation and exports',async({page,request})=>{
   test.setTimeout(300000)
   let recordId=''
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message))
@@ -39,11 +39,11 @@ test('real PDF extraction, engineering corrections, approval gate and exports',a
     await expect(page.locator('[data-field-id="year"]')).toHaveClass(/selected/)
     await expect(page.locator('.u-source-highlight')).toContainText('Year built')
     await page.screenshot({path:'tmp/u1-tests/review-desktop.png',fullPage:true})
-    const blocked=await request.patch(`/api/u1/records/${recordId}`,{data:{action:'approve',reviewer:'QA engineer'}})
-    expect(blocked.status()).toBe(400)
-    await page.getByRole('button',{name:'Review approval',exact:false}).click()
-    await expect(page.getByRole('button',{name:'Approve Engineering Record',exact:true})).toBeDisabled()
+    await page.getByRole('button',{name:'Finish review',exact:true}).click()
+    await expect(page.getByRole('button',{name:'Confirm Review & Approve',exact:true})).toBeEnabled()
+    await expect(page.getByRole('heading',{name:'One final engineering confirmation'})).toBeVisible()
     await page.getByRole('button',{name:'Continue review',exact:true}).click()
+    await expect(page.locator('.u-field-actions').getByRole('button',{name:'Confirm',exact:true})).toHaveCount(0)
     await page.getByRole('textbox',{name:'Edit Manufacturer',exact:true}).fill('QA ENGINEERING LTD')
     await page.getByRole('button',{name:'Save correction',exact:true}).click()
     await expect(page.locator('.u-field.selected')).toContainText('Corrected')
@@ -62,20 +62,16 @@ test('real PDF extraction, engineering corrections, approval gate and exports',a
     await page.getByRole('button',{name:'Corrections history',exact:true}).click()
     await expect(page.getByRole('heading',{name:'Review & corrections history'})).toBeVisible()
     await expect(page.locator('.u-data-table')).toContainText('SA106-B')
-    record=(await (await request.get('/api/u1/records')).json()).records.find((r:{id:string})=>r.id===recordId)
-    // Simulated explicit review decisions exercise the gate; this QA record is
-    // removed in finally and is never represented as a real engineer sign-off.
-    for(const f of record.fields){
-      if(['Verified','Corrected','N/A'].includes(f.status))continue
-      const response=await request.patch(`/api/u1/records/${recordId}`,{data:{action:'field',fieldId:f.id,value:f.value||'N/A',status:f.value?'Verified':'N/A',reviewer:'QA engineer'}})
-      expect(response.ok()).toBeTruthy()
-    }
     await page.reload();await page.getByRole('button',{name:'Vessel records',exact:true}).click()
     await page.getByLabel('Search vessel records').fill(recordId)
     await page.getByRole('button',{name:recordId,exact:true}).click()
     await page.getByRole('button',{name:'Approval',exact:true}).click()
-    await page.getByRole('button',{name:'Approve Engineering Record',exact:true}).click()
+    await page.getByRole('button',{name:'Confirm Review & Approve',exact:true}).click()
     await expect(page.getByRole('heading',{name:'Approved · Ready for Database Entry'})).toBeVisible()
+    record=(await (await request.get('/api/u1/records')).json()).records.find((r:{id:string})=>r.id===recordId)
+    expect(record.fields.every((f:{status:string})=>['Verified','Corrected','N/A'].includes(f.status))).toBeTruthy()
+    expect(record.fields.find((f:{id:string})=>f.id==='nozzle.1.material').status).toBe('Corrected')
+    expect(record.fields.find((f:{id:string})=>f.id==='year').status).toBe('Verified')
     const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export JSON',exact:true}).click();expect((await download).suggestedFilename()).toBe(recordId+'.json')
     const csv=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV',exact:true}).click();expect((await csv).suggestedFilename()).toBe(recordId+'.csv')
     await page.getByRole('button',{name:'JSON',exact:true}).click();await expect(page.locator('.u-json')).toContainText('Nozzles / openings')

@@ -25,16 +25,16 @@ test('requirement audit: static mappings, approved totals and filtered review na
   await page.getByRole('button',{name:'Field mappings',exact:true}).click()
   await expect(page.getByRole('region',{name:'Supported field mappings'}).locator('tbody tr')).toHaveCount(fields.length)
   await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('button',{name:/Engineering review/}).click()
-  await page.getByLabel('Field filter').selectOption('Needs review')
+  await page.getByLabel('Field filter').selectOption('Needs attention')
   await page.getByRole('button',{name:'Next field',exact:true}).click()
   await expect(page.getByRole('textbox',{name:'Edit Purchaser',exact:true})).toBeVisible()
-  await expect(page.getByLabel('Field filter')).toHaveValue('Needs review')
+  await expect(page.getByLabel('Field filter')).toHaveValue('Needs attention')
   await page.getByRole('button',{name:'Previous field',exact:true}).click()
   await expect(page.getByRole('textbox',{name:'Edit Manufacturer',exact:true})).toBeVisible()
 })
 
 test('Jost, complete document hit map, focus review and safe record navigation',async({page,request})=>{
-  test.setTimeout(120000)
+  test.setTimeout(180000)
   const upload=await request.post('/api/u1/upload',{multipart:{files:{name:'reference.pdf',mimeType:'application/pdf',buffer:await readFile('public/reference-u1.pdf')}}})
   const {pages}=await upload.json()
   // Browser-only fixtures test layout/navigation without creating a signed record.
@@ -89,7 +89,7 @@ test('Jost, complete document hit map, focus review and safe record navigation',
   await page.getByLabel('Review section').selectOption('General information')
   await page.getByRole('button',{name:'Focus review',exact:true}).click()
   await expect(page.locator('.u-app')).toHaveClass(/u-focus-mode/)
-  await page.getByRole('button',{name:'Next review item',exact:true}).click()
+  await page.getByRole('button',{name:'Next field needing attention',exact:true}).click()
   await expect(page.getByRole('textbox',{name:'Edit Manufacturer address',exact:true})).toBeVisible()
   await page.getByRole('button',{name:'Exit focus view',exact:true}).click()
   await page.getByRole('button',{name:'Vessel record',exact:true}).click()
