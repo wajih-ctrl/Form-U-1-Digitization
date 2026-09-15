@@ -9,7 +9,7 @@ await mkdir('tmp/u1-tests',{recursive:true})
 const sourcePages=await prepareFile(await readFile('public/reference-u1.pdf'),'Image registration reference')
 const changes={
   manufacturer:'ATLAS VESSELS LTD, 18 DOCK ROAD',serial:'HX-8842',nationalBoard:'98216',year:'2024',drawing:'DWG-771',installation:'PORT TERMINAL',
-  'shell.1.diameter':'48.0 IN','shell.1.material':'SA516-60','shell.1.thickness':'0.750','design.mawp':'225 psi','design.mdmt':'-35 F','design.test':'Hydro at 293 PSI','tube.1.number':'480','tube.1.material':'SA179',
+  'shell.length':`31' 4.5"`,'shell.1.diameter':'48.0 IN','shell.1.material':'SA516-60','shell.1.thickness':'0.750','shell.1.longExam':'Spot RT','shell.1.circExam':'Full RT','shell.1.heatTemp':'1125 F','shell.1.heatTime':'1.5 HR','bodyFlange.1.boltMaterial':'SA193-B7','design.mawp':'225 psi','design.mdmt':'-35 F','design.test':'Hydro at 293 PSI','tube.1.number':'480','tube.1.material':'SA179',
   'innerDesign.mawp':'300 psi','nozzle.1.material':'SA312','nozzle.1.size':'12','nozzle.1.number':'4','nozzle.3.thickness':'0.500',
   'cert.manufacturer':'ATLAS VESSELS LTD','cert.shopDate':'06/14/2024','cert.inspector':'JAMES CARTER','cert.commission':'NB 88219',
 }
@@ -33,8 +33,11 @@ for(let i=0;i<3;i++){
 const shuffled=[captured[1],captured[2],captured[0]]
 const result=await extract(shuffled,event=>console.log(event.message))
 assert.deepEqual(result.pages.map(page=>page.name),captured.map(page=>page.name),'Image pages should be classified and restored to Form U-1 order.')
+const pwht=result.fields.filter(field=>['shell.1.heatTemp','shell.1.heatTime'].includes(field.id))
+assert.ok(pwht.every(field=>field.table==='Shell courses'&&field.row===1),'Related PWHT temperature and time must remain in the same source row.')
+assert.ok(result.fields.filter(field=>['Review Required','Not Detected'].includes(field.status)).every(field=>field.lowConfidenceReason),'Every uncertain field must explain why review is needed.')
 await writeFile('tmp/u1-tests/image-result.json',JSON.stringify(result,null,2))
-const normalize=value=>value.replace(/\s/g,'').toUpperCase(),expected={...changes,manufacturer:'ATLAS VESSELS LTD',manufacturerAddress:'18 DOCK ROAD'},failures=[]
+const normalize=value=>value.replace(/\s/g,'').toUpperCase(),expected={...changes,'design.mdmt':'-35 °F','shell.1.heatTemp':'1125 °F',manufacturer:'ATLAS VESSELS LTD',manufacturerAddress:'18 DOCK ROAD'},failures=[]
 for(const [id,value] of Object.entries(expected)){
   const field=result.fields.find(field=>field.id===id)
   if(normalize(field?.value??'')!==normalize(value))failures.push(`${id}: expected ${value}, got ${field?.value||'(blank)'}`)

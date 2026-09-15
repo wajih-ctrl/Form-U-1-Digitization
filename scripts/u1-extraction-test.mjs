@@ -10,8 +10,8 @@ const pages=await prepareFile(await readFile('public/reference-u1.pdf'),'Referen
 const changes={
   manufacturer:'ATLAS VESSELS LTD, 18 DOCK ROAD',purchaser:'NORTH ENERGY INC, 44 RIVER ROAD',
   serial:'HX-8842',nationalBoard:'98216',year:'2024',drawing:'DWG-771',installation:'PORT TERMINAL',
-  'shell.1.diameter':'48.0 IN','shell.1.material':'SA516-60','shell.1.thickness':'0.750',
-  'design.mawp':'225 psi','design.mdmt':'-35 F','design.test':'Hydro at 293 PSI',
+  'shell.length':`31' 4.5"`,'shell.1.diameter':'48.0 IN','shell.1.material':'SA516-60','shell.1.thickness':'0.750','shell.1.longExam':'Spot RT','shell.1.circExam':'Full RT','shell.1.heatTemp':'1125 F','shell.1.heatTime':'1.5 HR',
+  'bodyFlange.1.boltMaterial':'SA193-B7','design.mawp':'225 psi','design.mdmt':'-35 F','design.test':'Hydro at 293 PSI',
   'tube.1.number':'480','tube.1.material':'SA179','innerDesign.mawp':'300 psi',
   'nozzle.1.material':'SA312','nozzle.1.size':'12','nozzle.1.number':'4','nozzle.3.thickness':'0.500',
   'cert.manufacturer':'ATLAS VESSELS LTD','cert.shopDate':'06/14/2024','cert.inspector':'JAMES CARTER','cert.commission':'NB 88219',
@@ -29,7 +29,7 @@ for(let i=0;i<3;i++){
 const result=await extract(altered,event=>console.log(event.message));
 await writeFile('tmp/u1-tests/changed-result.json',JSON.stringify(result,null,2));
 const normalize=v=>v.replace(/\s/g,'').toUpperCase();
-const expected={...changes,manufacturer:'ATLAS VESSELS LTD',manufacturerAddress:'18 DOCK ROAD',purchaser:'NORTH ENERGY INC',purchaserAddress:'44 RIVER ROAD'};
+const expected={...changes,'design.mdmt':'-35 °F','shell.1.heatTemp':'1125 °F',manufacturer:'ATLAS VESSELS LTD',manufacturerAddress:'18 DOCK ROAD',purchaser:'NORTH ENERGY INC',purchaserAddress:'44 RIVER ROAD'};
 const failures=[];
 for(const [id,value]of Object.entries(expected)){
   const field=result.fields.find(f=>f.id===id);

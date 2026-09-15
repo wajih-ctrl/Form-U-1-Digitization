@@ -34,12 +34,17 @@ export async function PATCH(request: Request, context:{params:Promise<{id:string
     } else if(body.action==='approve') {
       if(!record.fields.length) throw new Error('This record has no extracted fields to approve.')
       if(['Approved','Database Ready'].includes(record.status)) throw new Error('This record is already approved.')
-      const pending=record.fields.filter(f=>!resolved(f)).length
+      const supplied=body.fieldPolicies&&typeof body.fieldPolicies==='object'?body.fieldPolicies:{}
+      const policies=Object.fromEntries(record.fields.map(field=>{const value=supplied[field.id]??field.requirement??'optional';if(!['required','optional','ignored'].includes(value))throw new Error(`Invalid field policy for ${field.id}.`);return [field.id,value]})) as Record<string,'required'|'optional'|'ignored'>
+      const requiredMissing=record.fields.filter(field=>policies[field.id]==='required'&&!field.value.trim())
+      if(requiredMissing.length)throw new Error(`${requiredMissing.length} required field${requiredMissing.length===1?' is':'s are'} blank. Complete them or change their field policy before approval.`)
+      const pending=record.fields.filter(f=>policies[f.id]!=='ignored'&&!resolved(f)).length
       for(const field of record.fields) {
+        if(policies[field.id]==='ignored')continue
         if(!field.value.trim()){field.value='N/A';field.status='N/A'}
         else if(!['Corrected','N/A'].includes(field.status))field.status='Verified'
       }
-      record.status='Approved';record.approvedAt=now
+      record.fieldPolicies=policies;record.status='Approved';record.approvedAt=now
       record.history.push({id:crypto.randomUUID(),field:'Record',before:`${pending} fields awaiting final confirmation`,after:'Review confirmed · Approved · Ready for Database Entry',reviewer,at:now,status:'Approved'})
     } else if(body.action==='database') {
       if(!['Approved','Database Ready'].includes(record.status)) throw new Error('Approve the record before sending it to the database.')
