@@ -11,6 +11,8 @@ for(const [id,ocr,expected] of [
   ['innerHeadFlange.1.boltMaterial','SA193-B8N','SA193-B8M'],
   ['tube.1.material','SA214L','SA214'],
   ['nozzle.1.size','2.5*','2.5"'],
+  ['jacket.details','3/8* x 2* continuous closure bar','3/8" x 2" continuous closure bar'],
+  ['innerHeadFlange.1.bolting','40 . 1"-8UNC','40 - 1"-8UNC'],
   ['nozzle.1.reinforcement','Pao','PAD'],
   ['nozzle.2.attachmentDetails','c) ull pen','(c) Full pen'],
   ['inner.1.circExam','ull pen','Full pen'],
