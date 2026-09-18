@@ -16,6 +16,7 @@ const nextConfig = {
     ],
     '/api/u1/process': [
       './lib/u1/ocr/eng.traineddata.gz',
+      './lib/u1/ocr/reference-page-*.png',
       './lib/u1/ocr/runtime/**/*',
     ],
   },

@@ -33,10 +33,14 @@ export function exportFieldPath(f: UField): string[] {
   if(f.id.startsWith('nozzle.')){
     const key=f.id.split('.').at(-1)
     if(key==='flangeMaterial')return ['Flange','Material']
-    if(key==='reinforcement')return ['Reinforcement','Material']
-    if(key==='attachmentDetails')return ['Attachment details']
-    if(key==='location')return ['Location']
+    if(key==='reinforcement')return ['Reinforcement','Type']
+    if(key==='attachmentDetails')return ['Reinforcement','Nozzle / flange attachment details']
+    if(key==='type')return ['Flange','Type']
+    if(key==='location')return ['Nozzle','Location']
     if(key==='material')return ['Nozzle','Material']
+    if(key==='size')return ['Nozzle','Diameter / size']
+    if(key==='thickness')return ['Nozzle','Thickness']
+    if(key==='corrosion')return ['Nozzle','Corrosion allowance']
     return ['Nozzle',f.label]
   }
   return [f.label]
