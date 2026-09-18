@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { unlink } from 'node:fs/promises'
+import { readFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
 
 test('real PDF extraction, engineering corrections, one-step confirmation and exports',async({page,request})=>{
@@ -38,12 +38,21 @@ test('real PDF extraction, engineering corrections, one-step confirmation and ex
     await page.mouse.click(sheetBox!.x+(year.box[0]+year.box[2]/2)*sheetBox!.width,sheetBox!.y+(year.box[1]+year.box[3]/2)*sheetBox!.height)
     await expect(page.locator('[data-field-id="year"]')).toHaveClass(/selected/)
     await expect(page.locator('.u-source-highlight')).toContainText('Year built')
+    await page.getByRole('button',{name:/Review Fields \(/}).click()
+    await expect(page.locator('.u-review-queue-banner')).toContainText('Following the printed page and field order')
+    await expect(page.locator('[data-field-id="manufacturer"]')).toHaveClass(/selected/)
+    await page.getByRole('button',{name:'Mark N/A & next',exact:true}).click()
+    await expect(page.locator('.u-review-queue-banner')).toBeVisible()
+    await expect(page.locator('[data-field-id="manufacturer"]')).toHaveCount(0)
+    await page.getByRole('button',{name:'Exit Review Fields',exact:true}).click()
     await page.screenshot({path:'tmp/u1-tests/review-desktop.png',fullPage:true})
     await page.getByRole('button',{name:'Finish review',exact:true}).click()
     await expect(page.getByRole('button',{name:'Confirm Review & Approve',exact:true})).toBeEnabled()
     await expect(page.getByRole('heading',{name:'One final engineering confirmation'})).toBeVisible()
     await page.getByRole('button',{name:'Continue review',exact:true}).click()
     await expect(page.locator('.u-field-actions').getByRole('button',{name:'Confirm',exact:true})).toHaveCount(0)
+    await page.getByLabel('Review section').selectOption('General information')
+    await page.locator('[data-field-id="manufacturer"] .u-field-summary').click()
     await page.getByRole('textbox',{name:'Edit Manufacturer',exact:true}).fill('QA ENGINEERING LTD')
     await page.getByRole('button',{name:'Save correction',exact:true}).click()
     await expect(page.locator('.u-field.selected')).toContainText('Corrected')
@@ -72,9 +81,14 @@ test('real PDF extraction, engineering corrections, one-step confirmation and ex
     expect(record.fields.every((f:{status:string})=>['Verified','Corrected','N/A'].includes(f.status))).toBeTruthy()
     expect(record.fields.find((f:{id:string})=>f.id==='nozzle.1.material').status).toBe('Corrected')
     expect(record.fields.find((f:{id:string})=>f.id==='year').status).toBe('Verified')
-    const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export JSON',exact:true}).click();expect((await download).suggestedFilename()).toBe(recordId+'.json')
+    const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export JSON',exact:true}).click();const jsonDownload=await download;expect(jsonDownload.suggestedFilename()).toBe(recordId+'.json')
+    const exported=JSON.parse(await readFile(await jsonDownload.path(),'utf8'))
+    expect(exported.sections['Section 15'].tables['Table 1 · Heads'][0]).toHaveProperty('Knuckle radius')
+    expect(exported.sections['Section 15'].tables['Table 2 · Body flanges on heads']).toBeDefined()
+    expect(exported.sections['Section 19'].tables['Nozzles / openings'][0].Nozzle.Material).toBe('SA106-B')
+    expect(exported.sections['Section 19'].tables['Nozzles / openings'][0].Reinforcement).toHaveProperty('Material')
     const csv=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV',exact:true}).click();expect((await csv).suggestedFilename()).toBe(recordId+'.csv')
-    await page.getByRole('button',{name:'JSON',exact:true}).click();await expect(page.locator('.u-json')).toContainText('Nozzles / openings')
+    await page.getByRole('button',{name:'JSON',exact:true}).click();await expect(page.locator('.u-json')).toContainText('Section 19');await expect(page.locator('.u-json')).toContainText('Reinforcement');await expect(page.locator('.u-json')).toContainText('Section 15')
     await page.getByRole('button',{name:'Send to Database',exact:true}).click()
     await expect(page.getByRole('button',{name:'Database handoff recorded'})).toBeDisabled()
     const locked=await request.patch(`/api/u1/records/${recordId}`,{data:{action:'field',fieldId:'year',value:'2025',status:'Corrected'}});expect(locked.status()).toBe(400)

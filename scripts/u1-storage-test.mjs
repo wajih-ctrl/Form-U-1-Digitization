@@ -69,3 +69,20 @@ test('local storage stays persistent across fresh instances',async()=>{
     assert.equal((await b.getPage('one')).toString(),'pixels');assert.equal((await b.listRecords()).length,1);
   }finally{await rm(root,{recursive:true,force:true});}
 });
+test('older records keep reviewed attachment values without obsolete split cells',async()=>{
+  const store=createStorage({env:{VERCEL:'1',BLOB_READ_WRITE_TOKEN:'test-only'},client:remoteClient()});
+  const old={...record('U1-LEGACY'),fields:[
+    {id:'bodyFlange.1.boltQuantity',value:'36',box:[0,0,0.1,0.1]},
+    {id:'bodyFlange.1.boltSize',value:'7/8"',box:[0,0,0.1,0.1]},
+    {id:'nozzle.1.attachment',label:'Nozzle attachment',value:'(c)',original:'(c)',confidence:83,status:'Verified',box:[.7,.5,.05,.02]},
+    {id:'nozzle.1.flangeAttachment',label:'Flange attachment',value:'Butt',original:'Butt',confidence:91,status:'Verified',box:[.75,.5,.06,.02]},
+  ],fieldPolicies:{'bodyFlange.1.boltSize':'optional','nozzle.1.attachment':'required'}};
+  await store.saveRecord(old);
+  const migrated=await store.getRecord(old.id);
+  assert.deepEqual(migrated.fields.map(field=>field.id),['nozzle.1.attachmentDetails']);
+  assert.equal(migrated.fields[0].value,'(c) Butt');
+  assert.equal(migrated.fields[0].status,'Verified');
+  assert.deepEqual(migrated.fieldPolicies,{'nozzle.1.attachmentDetails':'required'});
+  await store.saveRecord(migrated);
+  assert.equal((await store.getRecord(old.id)).fields[0].value,'(c) Butt');
+});
