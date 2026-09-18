@@ -63,3 +63,56 @@ export function exportRecord(r: URecord) {
   const ordered=Object.fromEntries(Object.entries(sections).sort((a,b)=>a[1].number-b[1].number))
   return { recordId: r.id, formType: 'U-1', supportedLayout: 'U1-15', status: r.status, reviewer: r.reviewer, approvedAt: r.approvedAt, sections:ordered, reviewHistory: r.history, provenance: included.map(({id, page, box, confidence, original, status, importance, requirement, lowConfidenceReason}) => ({id, page, box, confidence, original, status, importance, requirement:r.fieldPolicies?.[id]??requirement??'optional',lowConfidenceReason})) }
 }
+
+/** A readable outline that keeps form relationships visible in a spreadsheet. */
+export function exportCsvOutline(r: URecord): string[][] {
+  const rows: string[][] = [['Level','Form hierarchy','Value','Review status','OCR confidence','Source page']]
+  const included=r.fields.filter(f=>(r.fieldPolicies?.[f.id]??f.requirement??'optional')!=='ignored')
+  const sections=new Map<number,{title:string;fields:UField[]}>()
+  for(const field of included){
+    const info=formSection(field)
+    const section=sections.get(info.number)??{title:info.title,fields:[]}
+    section.fields.push(field)
+    sections.set(info.number,section)
+  }
+  const heading=(level:string,depth:number,label:string)=>rows.push([level,'  '.repeat(depth)+label,'','','',''])
+  const value=(depth:number,label:string,field:UField)=>rows.push(['Field','  '.repeat(depth)+label,field.value,field.status,String(field.confidence),String(field.page)])
+  for(const [number,section] of [...sections].sort((a,b)=>a[0]-b[0])){
+    heading('Section',0,`Section ${number} · ${section.title}`)
+    for(const field of section.fields.filter(f=>!formSection(f).table||!f.row))value(1,field.label,field)
+    const tables=new Map<string,UField[]>()
+    for(const field of section.fields){
+      const info=formSection(field)
+      if(!info.table||!field.row)continue
+      const fields=tables.get(info.table)??[]
+      fields.push(field)
+      tables.set(info.table,fields)
+    }
+    for(const [table,fields] of tables){
+      heading('Table',1,table)
+      const byRow=new Map<number,UField[]>()
+      for(const field of fields){const cells=byRow.get(field.row!)??[];cells.push(field);byRow.set(field.row!,cells)}
+      for(const [row,cells] of [...byRow].sort((a,b)=>a[0]-b[0])){
+        heading('Row',2,`Row ${row}`)
+        for(const field of cells.filter(f=>exportFieldPath(f).length===1))value(3,exportFieldPath(field)[0],field)
+        const components=new Map<string,UField[]>()
+        for(const field of cells){
+          const path=exportFieldPath(field)
+          if(path.length<2)continue
+          const group=components.get(path[0])??[]
+          group.push(field)
+          components.set(path[0],group)
+        }
+        const order=['Nozzle','Reinforcement','Flange']
+        for(const [component,group] of [...components].sort((a,b)=>{
+          const left=order.indexOf(a[0]),right=order.indexOf(b[0])
+          return (left<0?order.length:left)-(right<0?order.length:right)
+        })){
+          heading('Component',3,component)
+          for(const field of group)value(4,exportFieldPath(field).slice(1).join(' / '),field)
+        }
+      }
+    }
+  }
+  return rows
+}
