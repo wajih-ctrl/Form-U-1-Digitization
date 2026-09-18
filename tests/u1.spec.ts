@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { readFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
+import ExcelJS from 'exceljs'
 
 test('real PDF extraction, engineering corrections, one-step confirmation and exports',async({page,request})=>{
   test.setTimeout(300000)
@@ -117,6 +118,20 @@ test('real PDF extraction, engineering corrections, one-step confirmation and ex
     const reinforcement=csvLines.findIndex((line,i)=>i>nozzle&&line==='"Component","      Reinforcement","","","",""')
     const flange=csvLines.findIndex((line,i)=>i>reinforcement&&line==='"Component","      Flange","","","",""')
     expect(nozzle).toBeGreaterThan(section19);expect(reinforcement).toBeGreaterThan(nozzle);expect(flange).toBeGreaterThan(reinforcement)
+    const excel=page.waitForEvent('download');await page.getByRole('button',{name:'Export Excel (.xlsx)',exact:true}).click();const excelDownload=await excel;expect(excelDownload.suggestedFilename()).toBe(recordId+'.xlsx')
+    const workbook=new ExcelJS.Workbook();const excelBytes=await readFile(await excelDownload.path());await workbook.xlsx.load(excelBytes as unknown as Parameters<typeof workbook.xlsx.load>[0])
+    const excelSheet=workbook.getWorksheet('Form U-1')!
+    expect(excelSheet.getColumn('A').width).toBeGreaterThan(50)
+    expect(excelSheet.getColumn('B').width).toBeGreaterThan(35)
+    expect(excelSheet.getCell('A1').value).toContain(recordId)
+    const excelRows:string[]=[];excelSheet.eachRow(row=>excelRows.push(String(row.getCell(1).value??'')))
+    const excelSection15=excelRows.findIndex(value=>value.startsWith('Section 15 ·'))
+    const excelTable1=excelRows.findIndex((value,i)=>i>excelSection15&&value==='Table 1 · Heads')
+    const excelKnuckle=excelRows.findIndex((value,i)=>i>excelTable1&&value==='Knuckle radius')
+    const excelTable2=excelRows.findIndex((value,i)=>i>excelKnuckle&&value==='Table 2 · Body flanges on heads')
+    expect(excelSection15).toBeGreaterThan(0);expect(excelTable1).toBeGreaterThan(excelSection15);expect(excelKnuckle).toBeGreaterThan(excelTable1);expect(excelTable2).toBeGreaterThan(excelKnuckle)
+    expect(excelSheet.getRow(excelKnuckle+1).getCell(2).value).toBe(exported.sections['Section 15'].tables['Table 1 · Heads'][0]['Knuckle radius'])
+    expect(excelSheet.getRow(excelSection15+1).getCell(1).fill.type).toBe('pattern')
     await page.getByRole('button',{name:'JSON',exact:true}).click();await expect(page.locator('.u-json')).toContainText('Section 19');await expect(page.locator('.u-json')).toContainText('Reinforcement');await expect(page.locator('.u-json')).toContainText('Section 15')
     await page.getByRole('button',{name:'Send to Database',exact:true}).click()
     await expect(page.getByRole('button',{name:'Database handoff recorded'})).toBeDisabled()
